@@ -17,7 +17,7 @@ Admin-passord skrives nederst i outputen. Logg: `/root/appendix-backend-install.
 
 ```bash
 cd /root/appendix-backend && git pull
-sudo -u deploy bash /root/appendix-backend/install-properties.sh /srv/appendix-backend   # ny generert kode
+sudo -u deploy bash /srv/appendix-backend/install-properties.sh /srv/appendix-backend   # ny generert kode
 cd /srv/appendix-backend && sudo -u deploy bash deploy.sh                                # migrasjoner + restart
 ```
 

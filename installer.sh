@@ -54,7 +54,8 @@ bash "$HERE/server/bootstrap-server.sh" "$DEPLOY_USER" "$PUBKEY"
 say "Legger filene i $TARGET"
 mkdir -p "$TARGET"
 cp -r "$HERE/server/." "$TARGET/"
-cp -r "$HERE/properties" "$TARGET/properties"
+rm -rf "$TARGET/properties" && cp -r "$HERE/properties" "$TARGET/properties"
+cp "$HERE/install-properties.sh" "$TARGET/install-properties.sh"
 
 say "Lager .env"
 if [[ ! -f "$TARGET/.env" ]]; then
@@ -90,7 +91,7 @@ say "Laravel: bygger image, oppretter prosjekt, starter stacken"
 sudo -u "$DEPLOY_USER" -H bash "$TARGET/deploy.sh" --first-run
 
 say "Legger inn Appendix Properties-koden"
-sudo -u "$DEPLOY_USER" -H bash "$HERE/install-properties.sh" "$TARGET"
+sudo -u "$DEPLOY_USER" -H bash "$TARGET/install-properties.sh" "$TARGET"
 
 say "Kjører migrasjoner"
 cd "$TARGET"
