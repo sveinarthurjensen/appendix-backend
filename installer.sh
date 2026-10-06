@@ -72,6 +72,10 @@ if [[ ! -f "$TARGET/.env" ]]; then
 else
   echo ".env finnes – beholdes"
 fi
+if [[ -n "$PORT" ]] && grep -q "caddy-site.sh" "$TARGET/docker-compose.override.yml" 2>/dev/null; then
+  echo "Caddy-oppsett finnes allerede (caddy-site.sh) – beholder det, ignorerer --port"
+  PORT=""
+fi
 if [[ -n "$PORT" ]]; then
   cat > "$TARGET/docker-compose.override.yml" <<YML
 # Generert av installer.sh --port $PORT: ingen Caddy, nginx direkte på port $PORT
