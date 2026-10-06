@@ -59,7 +59,7 @@ ufw delete allow 8090/tcp >/dev/null 2>&1 || true
 sed -i "s|^APP_URL=.*|APP_URL=https://$DOMAIN|" "$TARGET/.env"
 cd "$TARGET"
 sudo -u deploy -H docker compose up -d nginx
-sudo -u deploy -H docker compose run --rm --user "$(id -u deploy):$(id -g deploy)" -e HOME=/tmp app php artisan optimize >/dev/null
+sudo -u deploy -H docker compose run --rm --user "$(id -u deploy):$(id -g deploy)" -e HOME=/tmp app php artisan optimize
 docker exec "$CADDY" caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1 || true
 
 sleep 5

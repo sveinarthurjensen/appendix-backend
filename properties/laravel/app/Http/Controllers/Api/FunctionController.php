@@ -32,6 +32,12 @@ class FunctionController extends Controller
         }
     }
 
+    /** GET /api/functions/exportPropertyIcal?… – offentlig iCal (Airbnb/Booking); rått text/calendar-svar */
+    public function exportPropertyIcal(Request $request)
+    {
+        return app(\App\Functions\ExportPropertyIcal::class)->response($request->query());
+    }
+
     /** GET /api/functions – hvilke funksjoner som finnes i Laravel (brukes av shimen/feilsøking) */
     public function index(): JsonResponse
     {
