@@ -18,6 +18,9 @@ runapp() { docker compose run --rm --user "$ME" -e COMPOSER_HOME=/tmp/composer -
 
 docker compose build --pull
 
+# storage-volumet opprettes root-eid av Docker – gjør det skrivbart for oss og www-data før noe annet
+docker compose run --rm --no-deps --user root app sh -c "mkdir -p storage && chown -R $ME storage && chmod -R a+rwX storage"
+
 if $FIRST_RUN && [[ ! -f src/artisan ]]; then
   echo "==> Oppretter Laravel 12-prosjekt i ./src (uten post-install-skript – de kjøres styrt under)"
   mkdir -p src
