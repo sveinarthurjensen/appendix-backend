@@ -45,20 +45,25 @@ ufw --force enable
 echo "==> fail2ban"
 systemctl enable --now fail2ban
 
-echo "==> Docker Engine + Compose-plugin"
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-chmod a+r /etc/apt/keyrings/docker.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
-  > /etc/apt/sources.list.d/docker.list
-apt-get update
-apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+if docker compose version >/dev/null 2>&1; then
+  echo "==> Docker + Compose finnes allerede ($(docker --version)) – hopper over installasjon"
+else
+  echo "==> Docker Engine + Compose-plugin"
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --batch --yes --dearmor -o /etc/apt/keyrings/docker.gpg
+  chmod a+r /etc/apt/keyrings/docker.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+    > /etc/apt/sources.list.d/docker.list
+  apt-get update
+  apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+fi
 usermod -aG docker "$DEPLOY_USER"
 
-# Docker skal ikke åpne porter forbi ufw
-cat > /etc/docker/daemon.json <<'JSON'
-{ "iptables": true, "log-driver": "json-file", "log-opts": { "max-size": "20m", "max-file": "5" } }
+if [[ ! -f /etc/docker/daemon.json ]]; then
+  cat > /etc/docker/daemon.json <<'JSON'
+{ "log-driver": "json-file", "log-opts": { "max-size": "20m", "max-file": "5" } }
 JSON
+fi
 systemctl enable --now docker
 
 echo "==> Prosjektmappe"
