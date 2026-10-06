@@ -40,7 +40,10 @@ else
 fi
 
 say "Sjekker port 80/443"
-if [[ -n "$PORT" ]]; then
+if grep -q "caddy-site.sh" "$TARGET/docker-compose.override.yml" 2>/dev/null; then
+  echo "API-et går via serverens Caddy (caddy-site.sh) – ingen portsjekk"
+  PORT=""
+elif [[ -n "$PORT" ]]; then
   echo "Hopper over – Caddy brukes ikke, nginx eksponeres på port $PORT"
 elif ss -ltnp 2>/dev/null | grep -qE ':(80|443) ' && ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q appendix-backend-caddy; then
   echo "Noe annet lytter allerede på 80/443:"; ss -ltnp | grep -E ':(80|443) '
