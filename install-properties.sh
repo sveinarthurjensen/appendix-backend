@@ -9,7 +9,7 @@ cd "$TARGET"
 
 # API-ruter + Sanctum (Laravel 12 har ikke dette som standard)
 if [[ ! -f "$SRC/routes/api.php" ]]; then
-  docker compose run --rm app php artisan install:api --no-interaction
+  docker compose run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp app php artisan install:api --no-interaction
 fi
 
 cp -r "$CODE/app/." "$SRC/app/"
@@ -33,5 +33,5 @@ open(p,'w').write(s)
 PY
 fi
 
-docker compose run --rm app composer dump-autoload --optimize --quiet
+docker compose run --rm --no-deps --user "$(id -u):$(id -g)" -e HOME=/tmp -e COMPOSER_HOME=/tmp/composer app composer dump-autoload --optimize --quiet
 echo "Appendix Properties-kode lagt inn i $SRC"

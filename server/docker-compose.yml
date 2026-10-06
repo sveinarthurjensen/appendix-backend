@@ -9,6 +9,7 @@ x-app: &app
   env_file: .env
   volumes:
     - ./src:/var/www/html
+    - ./.env:/var/www/html/.env
     - storage:/var/www/html/storage
   depends_on:
     postgres:

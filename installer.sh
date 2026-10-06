@@ -93,14 +93,14 @@ sudo -u "$DEPLOY_USER" -H bash "$HERE/install-properties.sh" "$TARGET"
 
 say "Kjører migrasjoner"
 cd "$TARGET"
-sudo -u "$DEPLOY_USER" -H docker compose run --rm app php artisan migrate --force
-sudo -u "$DEPLOY_USER" -H docker compose run --rm app php artisan optimize
+sudo -u "$DEPLOY_USER" -H docker compose run --rm --user "$(id -u $DEPLOY_USER):$(id -g $DEPLOY_USER)" -e HOME=/tmp app php artisan migrate --force
+sudo -u "$DEPLOY_USER" -H docker compose run --rm --user "$(id -u $DEPLOY_USER):$(id -g $DEPLOY_USER)" -e HOME=/tmp app php artisan optimize
 sudo -u "$DEPLOY_USER" -H docker compose up -d
 
 say "Oppretter første admin-bruker"
 ADMIN_EMAIL="svein.arthur.jensen@appendixholding.no"
 ADMIN_PASS=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)
-sudo -u "$DEPLOY_USER" -H docker compose run --rm app php artisan tinker --execute="
+sudo -u "$DEPLOY_USER" -H docker compose run --rm --user "$(id -u $DEPLOY_USER):$(id -g $DEPLOY_USER)" -e HOME=/tmp app php artisan tinker --execute="
   \$u = \App\Models\User::firstOrNew(['app_id'=>'appendix_properties','email'=>'$ADMIN_EMAIL']);
   if (!\$u->exists) { \$u->id = strtolower((string)\Str::ulid()); }
   \$u->fill(['full_name'=>'Svein Arthur Jensen','role'=>'admin','admin_approved'=>true,'password'=>'$ADMIN_PASS']);
