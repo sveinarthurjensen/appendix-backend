@@ -17,21 +17,18 @@ cp "$CODE/routes/api.php" "$SRC/routes/api.php"
 rm -f "$SRC/database/migrations/0001_01_01_000000_create_users_table.php"
 cp "$CODE"/database/migrations/*.php "$SRC/database/migrations/"
 
-# services.functions i config/services.php
-if ! grep -q "'functions'" "$SRC/config/services.php"; then
-  python3 - "$SRC/config/services.php" <<'PY'
+# Tjenestekonfig: alle nøkler fra properties/laravel/config-services.php merges inn i config/services.php
+python3 - "$SRC/config/services.php" "$CODE/config-services.php" <<'PY'
 import sys,re
-p=sys.argv[1]; s=open(p).read()
-add="""    'functions' => [
-        'url' => env('FUNCTIONS_URL'),
-        'token' => env('FUNCTIONS_TOKEN'),
-    ],
-
-"""
-s=re.sub(r"(return \[\n)", r"\1"+add, s, count=1)
+p,src=sys.argv[1],sys.argv[2]
+s=open(p).read(); add=open(src).read()
+body=add[add.index('return [')+len('return ['):add.rindex('];')]
+# fjern tidligere innsatt blokk
+s=re.sub(r"\n    // --- appendix-backend start ---.*?// --- appendix-backend slutt ---\n", "\n", s, flags=re.S)
+s=re.sub(r"(return \[\n)", r"\1    // --- appendix-backend start ---"+body.replace('\\','\\\\')+"    // --- appendix-backend slutt ---\n", s, count=1)
 open(p,'w').write(s)
 PY
-fi
+cp "$CODE"/resources -r "$SRC/" 2>/dev/null || true
 
 docker compose run --rm --no-deps --user "$(id -u):$(id -g)" -e HOME=/tmp -e COMPOSER_HOME=/tmp/composer app composer dump-autoload --optimize --quiet
 echo "Appendix Properties-kode lagt inn i $SRC"

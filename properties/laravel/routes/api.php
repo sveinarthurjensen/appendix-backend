@@ -18,6 +18,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/entities/{entity}/{id}', [EntityController::class, 'update']);
     Route::delete('/entities/{entity}/{id}', [EntityController::class, 'destroy']);
 
+    Route::get('/functions', [FunctionController::class, 'index']);
     Route::post('/functions/{name}', [FunctionController::class, 'invoke']);
 });
 
