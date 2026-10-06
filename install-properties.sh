@@ -14,6 +14,7 @@ fi
 
 cp -r "$CODE/app/." "$SRC/app/"
 cp "$CODE/routes/api.php" "$SRC/routes/api.php"
+cp "$CODE/routes/console.php" "$SRC/routes/console.php"
 rm -f "$SRC/database/migrations/0001_01_01_000000_create_users_table.php"
 cp "$CODE"/database/migrations/*.php "$SRC/database/migrations/"
 

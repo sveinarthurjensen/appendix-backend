@@ -43,6 +43,8 @@ class UserInvite extends Model
     protected $table = 'user_invites';
 
     protected $fillable = [
+        'send_email',   // brukt av createUserInvite – fantes ikke i Base44-skjemaet
+        'send_sms',
         'token',
         'short_code',
         'target_user_id',
@@ -69,6 +71,8 @@ class UserInvite extends Model
     ];
 
     protected $casts = [
+        'send_email' => 'boolean',
+        'send_sms' => 'boolean',
         'expires_at' => 'datetime',
         'used_at' => 'datetime',
         'created_at' => 'datetime',
