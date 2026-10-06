@@ -95,7 +95,13 @@ sudo -u "$DEPLOY_USER" -H bash "$TARGET/install-properties.sh" "$TARGET"
 
 say "Kjører migrasjoner"
 cd "$TARGET"
-sudo -u "$DEPLOY_USER" -H docker compose run --rm --user "$(id -u $DEPLOY_USER):$(id -g $DEPLOY_USER)" -e HOME=/tmp app php artisan migrate --force
+if [[ ! -f "$TARGET/.properties-migrated" ]]; then
+  # Første gang: Laravel sin standard users-tabell ble laget av deploy.sh før vår kode kom inn – bygg databasen på nytt
+  sudo -u "$DEPLOY_USER" -H docker compose run --rm --user "$(id -u $DEPLOY_USER):$(id -g $DEPLOY_USER)" -e HOME=/tmp app php artisan migrate:fresh --force
+  touch "$TARGET/.properties-migrated"
+else
+  sudo -u "$DEPLOY_USER" -H docker compose run --rm --user "$(id -u $DEPLOY_USER):$(id -g $DEPLOY_USER)" -e HOME=/tmp app php artisan migrate --force
+fi
 sudo -u "$DEPLOY_USER" -H docker compose run --rm --user "$(id -u $DEPLOY_USER):$(id -g $DEPLOY_USER)" -e HOME=/tmp app php artisan optimize
 sudo -u "$DEPLOY_USER" -H docker compose up -d
 
