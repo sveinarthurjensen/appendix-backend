@@ -22,4 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/functions/{name}', [FunctionController::class, 'invoke']);
 });
 
+// Offentlig iCal-eksport (Airbnb/Booking henter denne uten innlogging)
+Route::get('/functions/exportPropertyIcal', fn (\Illuminate\Http\Request $r) => app(\App\Functions\ExportPropertyIcal::class)->response($r->query()));
+
 Route::get('/health', fn () => ['ok' => true, 'time' => now()->toIso8601String()]);
