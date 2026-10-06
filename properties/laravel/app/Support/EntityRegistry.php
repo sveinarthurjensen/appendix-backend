@@ -1,0 +1,80 @@
+<?php
+
+namespace App\Support;
+
+/** Generert: Base44-entitetsnavn → Eloquent-modell. */
+final class EntityRegistry
+{
+    public const MODELS = [
+        'AdExpense' => \App\Models\AdExpense::class,
+        'AuditEvent' => \App\Models\AuditEvent::class,
+        'Booking' => \App\Models\Booking::class,
+        'BrregOppslag' => \App\Models\BrregOppslag::class,
+        'BudgetItem' => \App\Models\BudgetItem::class,
+        'Case' => \App\Models\CaseRecord::class,
+        'CaseDocument' => \App\Models\CaseDocument::class,
+        'ChatMessage' => \App\Models\ChatMessage::class,
+        'Contract' => \App\Models\Contract::class,
+        'ContractEvent' => \App\Models\ContractEvent::class,
+        'ContractTemplate' => \App\Models\ContractTemplate::class,
+        'ContractVersion' => \App\Models\ContractVersion::class,
+        'DataBackup' => \App\Models\DataBackup::class,
+        'Equipment' => \App\Models\Equipment::class,
+        'Expense' => \App\Models\Expense::class,
+        'FinnAd' => \App\Models\FinnAd::class,
+        'GoogleAdsAccount' => \App\Models\GoogleAdsAccount::class,
+        'InboxMessage' => \App\Models\InboxMessage::class,
+        'Income' => \App\Models\Income::class,
+        'Insurance' => \App\Models\Insurance::class,
+        'Invitation' => \App\Models\Invitation::class,
+        'InvitationLog' => \App\Models\InvitationLog::class,
+        'Invoice' => \App\Models\Invoice::class,
+        'LessorCompany' => \App\Models\LessorCompany::class,
+        'LetterDraft' => \App\Models\LetterDraft::class,
+        'LetterTemplate' => \App\Models\LetterTemplate::class,
+        'LetterVersion' => \App\Models\LetterVersion::class,
+        'Location' => \App\Models\Location::class,
+        'MaintenanceLog' => \App\Models\MaintenanceLog::class,
+        'MaintenanceStaff' => \App\Models\MaintenanceStaff::class,
+        'MaintenanceTask' => \App\Models\MaintenanceTask::class,
+        'MarketingCampaign' => \App\Models\MarketingCampaign::class,
+        'MarketingContact' => \App\Models\MarketingContact::class,
+        'MunicipalInfo' => \App\Models\MunicipalInfo::class,
+        'NettsideStatus' => \App\Models\NettsideStatus::class,
+        'NotificationLog' => \App\Models\NotificationLog::class,
+        'NotificationTemplate' => \App\Models\NotificationTemplate::class,
+        'OidcAuthFlow' => \App\Models\OidcAuthFlow::class,
+        'OidcSigningKey' => \App\Models\OidcSigningKey::class,
+        'ParkingAccessDevice' => \App\Models\ParkingAccessDevice::class,
+        'ParkingRental' => \App\Models\ParkingRental::class,
+        'ParkingSpot' => \App\Models\ParkingSpot::class,
+        'Payment' => \App\Models\Payment::class,
+        'PoolReading' => \App\Models\PoolReading::class,
+        'PortalMessage' => \App\Models\PortalMessage::class,
+        'Property' => \App\Models\Property::class,
+        'PropertyAvailability' => \App\Models\PropertyAvailability::class,
+        'PropertyInfo' => \App\Models\PropertyInfo::class,
+        'QRSession' => \App\Models\QRSession::class,
+        'RentalJournal' => \App\Models\RentalJournal::class,
+        'SecureCredential' => \App\Models\SecureCredential::class,
+        'SecurityAudit' => \App\Models\SecurityAudit::class,
+        'SelfDeclaration' => \App\Models\SelfDeclaration::class,
+        'ServicePartner' => \App\Models\ServicePartner::class,
+        'ServiceSchedule' => \App\Models\ServiceSchedule::class,
+        'TaxReport' => \App\Models\TaxReport::class,
+        'Tenant' => \App\Models\Tenant::class,
+        'TenantOffer' => \App\Models\TenantOffer::class,
+        'TenantPayment' => \App\Models\TenantPayment::class,
+        'UserInvite' => \App\Models\UserInvite::class,
+        'UserInviteEvent' => \App\Models\UserInviteEvent::class,
+        'UserRole' => \App\Models\UserRole::class,
+        'VaultEntry' => \App\Models\VaultEntry::class,
+        'WebAuthnChallenge' => \App\Models\WebAuthnChallenge::class,
+        'WebAuthnCredential' => \App\Models\WebAuthnCredential::class,
+    ];
+
+    public static function model(string $entity): ?string
+    {
+        return self::MODELS[$entity] ?? null;
+    }
+}

@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# Appendix-backend – alt-i-ett-installasjon på en fersk Ubuntu-server.
+#
+#   bash appendix-backend/installer.sh                      -> kjører på http://<server-ip>  (uten TLS)
+#   bash appendix-backend/installer.sh api.appendixholding.no -> TLS via Let's Encrypt (DNS må peke hit først)
+#
+# Kjøres som root. Idempotent: kan kjøres på nytt, hopper over det som er gjort.
+set -euo pipefail
+
+DOMAIN="${1:-}"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+TARGET=/srv/appendix-backend
+DEPLOY_USER=deploy
+LOG=/root/appendix-backend-install.log
+exec > >(tee -a "$LOG") 2>&1
+
+say() { echo; echo "==> $*"; }
+[[ $EUID -eq 0 ]] || { echo "Kjør som root"; exit 1; }
+
+PUBLIC_IP=$(curl -s4 --max-time 5 https://ifconfig.me || hostname -I | awk '{print $1}')
+if [[ -n "$DOMAIN" ]]; then
+  RESOLVED=$(getent ahostsv4 "$DOMAIN" | awk '{print $1; exit}' || true)
+  if [[ "$RESOLVED" != "$PUBLIC_IP" ]]; then
+    echo "ADVARSEL: $DOMAIN peker på '${RESOLVED:-ingenting}', serveren er $PUBLIC_IP. Caddy får ikke sertifikat før DNS er riktig."
+    read -r -p "Fortsette likevel? [j/N] " a; [[ "$a" =~ ^[jJyY]$ ]] || exit 1
+  fi
+  APP_DOMAIN="$DOMAIN"; APP_URL="https://$DOMAIN"
+else
+  APP_DOMAIN="http://$PUBLIC_IP"; APP_URL="http://$PUBLIC_IP"
+fi
+
+say "Sjekker port 80/443"
+if ss -ltnp 2>/dev/null | grep -qE ':(80|443) ' && ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q appendix-backend-caddy; then
+  echo "Noe annet lytter allerede på 80/443:"; ss -ltnp | grep -E ':(80|443) '
+  echo "Stopp det, eller si fra til Claude så tilpasses Caddy-delen."; exit 1
+fi
+
+say "Grunnoppsett av serveren (pakker, brannmur, Docker, deploy-bruker)"
+PUBKEY=""; [[ -f /root/.ssh/authorized_keys ]] && PUBKEY=/root/.ssh/authorized_keys
+bash "$HERE/server/bootstrap-server.sh" "$DEPLOY_USER" "$PUBKEY"
+
+say "Legger filene i $TARGET"
+mkdir -p "$TARGET"
+cp -r "$HERE/server/." "$TARGET/"
+cp -r "$HERE/properties" "$TARGET/properties"
+
+say "Lager .env"
+if [[ ! -f "$TARGET/.env" ]]; then
+  gen() { tr -dc 'A-Za-z0-9' </dev/urandom | head -c 40; }
+  sed -e "s|^DB_PASSWORD=.*|DB_PASSWORD=$(gen)|" \
+      -e "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=$(gen)|" \
+      -e "s|^APP_DOMAIN=.*|APP_DOMAIN=$APP_DOMAIN|" \
+      -e "s|^APP_URL=.*|APP_URL=$APP_URL|" \
+      -e "s|^APP_ENV=.*|APP_ENV=production|" \
+      "$TARGET/.env.example" > "$TARGET/.env"
+  echo "FUNCTIONS_URL=" >> "$TARGET/.env"
+  echo "FUNCTIONS_TOKEN=$(gen)" >> "$TARGET/.env"
+  chmod 600 "$TARGET/.env"
+else
+  echo ".env finnes – beholdes"
+fi
+chown -R "$DEPLOY_USER:$DEPLOY_USER" "$TARGET"
+
+say "Laravel: bygger image, oppretter prosjekt, starter stacken"
+sudo -u "$DEPLOY_USER" -H bash "$TARGET/deploy.sh" --first-run
+
+say "Legger inn Appendix Properties-koden"
+sudo -u "$DEPLOY_USER" -H bash "$HERE/install-properties.sh" "$TARGET"
+
+say "Kjører migrasjoner"
+cd "$TARGET"
+sudo -u "$DEPLOY_USER" -H docker compose run --rm app php artisan migrate --force
+sudo -u "$DEPLOY_USER" -H docker compose run --rm app php artisan optimize
+sudo -u "$DEPLOY_USER" -H docker compose up -d
+
+say "Oppretter første admin-bruker"
+ADMIN_EMAIL="svein.arthur.jensen@appendixholding.no"
+ADMIN_PASS=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)
+sudo -u "$DEPLOY_USER" -H docker compose run --rm app php artisan tinker --execute="
+  \$u = \App\Models\User::firstOrNew(['app_id'=>'appendix_properties','email'=>'$ADMIN_EMAIL']);
+  if (!\$u->exists) { \$u->id = strtolower((string)\Str::ulid()); }
+  \$u->fill(['full_name'=>'Svein Arthur Jensen','role'=>'admin','admin_approved'=>true,'password'=>'$ADMIN_PASS']);
+  \$u->save(); echo 'ok';"
+
+say "Helsesjekk"
+sleep 5
+if curl -fsS "$APP_URL/api/health" ; then echo; echo "API svarer."; else echo "API svarer ikke ennå – sjekk: cd $TARGET && docker compose logs --tail=100 app nginx caddy"; fi
+
+cat <<DONE
+
+=========================================================
+  Appendix-backend er installert.
+
+  URL:        $APP_URL
+  Mappe:      $TARGET
+  Admin:      $ADMIN_EMAIL
+  Passord:    $ADMIN_PASS      (bytt ved første innlogging)
+  Logg:       $LOG
+
+  Test:
+    TOKEN=\$(curl -s -X POST $APP_URL/api/auth/login -H 'Content-Type: application/json' \\
+      -d '{"email":"$ADMIN_EMAIL","password":"$ADMIN_PASS"}' | jq -r .token)
+    curl -s $APP_URL/api/entities/Property -H "Authorization: Bearer \$TOKEN"
+
+  Dataimport (når eksport fra Base44 ligger i $TARGET/export):
+    cd $TARGET && docker compose run --rm -v \$PWD/export:/export app php artisan base44:import /export
+
+  Drift:  cd $TARGET && docker compose ps | logs -f app horizon
+=========================================================
+DONE
