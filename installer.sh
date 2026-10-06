@@ -3,11 +3,19 @@
 #
 #   bash appendix-backend/installer.sh                      -> kjører på http://<server-ip>  (uten TLS)
 #   bash appendix-backend/installer.sh api.appendixholding.no -> TLS via Let's Encrypt (DNS må peke hit først)
+#   bash appendix-backend/installer.sh --port 8090           -> uten Caddy: nginx direkte på http://<ip>:8090
+#                                                               (når noe annet allerede bruker 80/443 på serveren)
 #
 # Kjøres som root. Idempotent: kan kjøres på nytt, hopper over det som er gjort.
 set -euo pipefail
 
-DOMAIN="${1:-}"
+DOMAIN=""; PORT=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --port) PORT="$2"; shift 2 ;;
+    *) DOMAIN="$1"; shift ;;
+  esac
+done
 HERE="$(cd "$(dirname "$0")" && pwd)"
 TARGET=/srv/appendix-backend
 DEPLOY_USER=deploy
@@ -25,12 +33,16 @@ if [[ -n "$DOMAIN" ]]; then
     read -r -p "Fortsette likevel? [j/N] " a; [[ "$a" =~ ^[jJyY]$ ]] || exit 1
   fi
   APP_DOMAIN="$DOMAIN"; APP_URL="https://$DOMAIN"
+elif [[ -n "$PORT" ]]; then
+  APP_DOMAIN="-"; APP_URL="http://$PUBLIC_IP:$PORT"
 else
   APP_DOMAIN="http://$PUBLIC_IP"; APP_URL="http://$PUBLIC_IP"
 fi
 
 say "Sjekker port 80/443"
-if ss -ltnp 2>/dev/null | grep -qE ':(80|443) ' && ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q appendix-backend-caddy; then
+if [[ -n "$PORT" ]]; then
+  echo "Hopper over – Caddy brukes ikke, nginx eksponeres på port $PORT"
+elif ss -ltnp 2>/dev/null | grep -qE ':(80|443) ' && ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q appendix-backend-caddy; then
   echo "Noe annet lytter allerede på 80/443:"; ss -ltnp | grep -E ':(80|443) '
   echo "Stopp det, eller si fra til Claude så tilpasses Caddy-delen."; exit 1
 fi
@@ -58,6 +70,18 @@ if [[ ! -f "$TARGET/.env" ]]; then
   chmod 600 "$TARGET/.env"
 else
   echo ".env finnes – beholdes"
+fi
+if [[ -n "$PORT" ]]; then
+  cat > "$TARGET/docker-compose.override.yml" <<YML
+# Generert av installer.sh --port $PORT: ingen Caddy, nginx direkte på port $PORT
+services:
+  nginx:
+    ports: !override
+      - "0.0.0.0:$PORT:80"
+  caddy:
+    profiles: ["disabled"]
+YML
+  ufw allow "$PORT"/tcp >/dev/null || true
 fi
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$TARGET"
 
