@@ -87,8 +87,13 @@ fi
 mkdir -p "$TARGET/src" "$TARGET/backups"
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$TARGET"
 
-say "Laravel: bygger image, oppretter prosjekt, starter stacken"
-sudo -u "$DEPLOY_USER" -H bash "$TARGET/deploy.sh" --first-run
+if [[ ! -f "$TARGET/src/artisan" ]]; then
+  say "Laravel: bygger image, oppretter prosjekt, starter stacken"
+  sudo -u "$DEPLOY_USER" -H bash "$TARGET/deploy.sh" --first-run
+else
+  say "Laravel-prosjektet finnes allerede – hopper til Properties-koden"
+  cd "$TARGET" && sudo -u "$DEPLOY_USER" -H docker compose up -d postgres redis
+fi
 
 say "Legger inn Appendix Properties-koden"
 sudo -u "$DEPLOY_USER" -H bash "$TARGET/install-properties.sh" "$TARGET"
