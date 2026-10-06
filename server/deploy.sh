@@ -16,14 +16,16 @@ ME="$(id -u):$(id -g)"
 run() { docker compose run --rm --no-deps --user "$ME" -e COMPOSER_HOME=/tmp/composer -e HOME=/tmp app "$@"; }
 runapp() { docker compose run --rm --user "$ME" -e COMPOSER_HOME=/tmp/composer -e HOME=/tmp app "$@"; }
 
+# ./src må finnes og eies av oss FØR Docker rører den – ellers oppretter Docker den som root ved første mount
+mkdir -p src backups
+
 docker compose build --pull
 
-# storage-volumet opprettes root-eid av Docker – gjør det skrivbart for oss og www-data før noe annet
-docker compose run --rm --no-deps --user root app sh -c "mkdir -p storage && chown -R $ME storage && chmod -R a+rwX storage"
+# storage-volumet opprettes root-eid av Docker – gjør det (og /var/www/html) skrivbart for oss og www-data før noe annet
+docker compose run --rm --no-deps --user root app sh -c "chown $ME /var/www/html && mkdir -p storage && chown -R $ME storage && chmod -R a+rwX storage"
 
 if $FIRST_RUN && [[ ! -f src/artisan ]]; then
   echo "==> Oppretter Laravel 12-prosjekt i ./src (uten post-install-skript – de kjøres styrt under)"
-  mkdir -p src
   run sh -c 'composer create-project laravel/laravel:^12.0 /tmp/laravel --no-scripts --no-interaction --prefer-dist \
              && cp -a /tmp/laravel/. /var/www/html/'
   echo "==> Installerer grunnpakkene fra planen"

@@ -83,6 +83,7 @@ services:
 YML
   ufw allow "$PORT"/tcp >/dev/null || true
 fi
+mkdir -p "$TARGET/src" "$TARGET/backups"
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$TARGET"
 
 say "Laravel: bygger image, oppretter prosjekt, starter stacken"
