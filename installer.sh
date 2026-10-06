@@ -112,12 +112,10 @@ sudo -u "$DEPLOY_USER" -H docker compose up -d
 
 say "Oppretter første admin-bruker"
 ADMIN_EMAIL="svein.arthur.jensen@appendixholding.no"
-ADMIN_PASS=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)
-sudo -u "$DEPLOY_USER" -H docker compose run --rm --user "$(id -u $DEPLOY_USER):$(id -g $DEPLOY_USER)" -e HOME=/tmp app php artisan tinker --execute="
-  \$u = \App\Models\User::firstOrNew(['app_id'=>'appendix_properties','email'=>'$ADMIN_EMAIL']);
-  if (!\$u->exists) { \$u->id = strtolower((string)\Str::ulid()); }
-  \$u->fill(['full_name'=>'Svein Arthur Jensen','role'=>'admin','admin_approved'=>true,'password'=>'$ADMIN_PASS']);
-  \$u->save(); echo 'ok';"
+ADMIN_OUT=$(sudo -u "$DEPLOY_USER" -H docker compose run --rm --user "$(id -u $DEPLOY_USER):$(id -g $DEPLOY_USER)" -e HOME=/tmp app \
+  php artisan app:make-admin "$ADMIN_EMAIL" --name="Svein Arthur Jensen" 2>&1) || { echo "$ADMIN_OUT"; echo "FEIL ved oppretting av admin"; exit 1; }
+echo "$ADMIN_OUT" | grep -v PASSORD
+ADMIN_PASS=$(echo "$ADMIN_OUT" | sed -n 's/^PASSORD: //p')
 
 say "Helsesjekk"
 sleep 5
