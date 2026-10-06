@@ -12,13 +12,17 @@ use Illuminate\Support\Str;
  */
 class MakeAdmin extends Command
 {
-    protected $signature = 'app:make-admin {email} {--name=} {--password=} {--app=appendix_properties}';
+    protected $signature = 'app:make-admin {email} {--name=} {--password=} {--app=appendix_properties} {--if-missing : Ikke rør eksisterende bruker}';
     protected $description = 'Opprett/oppdater admin-bruker';
 
     public function handle(): int
     {
         $password = $this->option('password') ?: Str::password(16, symbols: false);
         $user = User::firstOrNew(['app_id' => $this->option('app'), 'email' => $this->argument('email')]);
+        if ($user->exists && $this->option('if-missing')) {
+            $this->info("Admin {$user->email} finnes – uendret");
+            return self::SUCCESS;
+        }
         if (!$user->exists) {
             $user->id = strtolower((string) Str::ulid());
         }

@@ -120,10 +120,11 @@ sudo -u "$DEPLOY_USER" -H docker compose up -d
 say "Oppretter første admin-bruker"
 ADMIN_EMAIL="svein.arthur.jensen@appendixholding.no"
 ADMIN_OUT=$(sudo -u "$DEPLOY_USER" -H docker compose run --rm --user "$(id -u $DEPLOY_USER):$(id -g $DEPLOY_USER)" -e HOME=/tmp app \
-  php artisan app:make-admin "$ADMIN_EMAIL" --name="Svein Arthur Jensen" 2>&1) || { echo "$ADMIN_OUT"; echo "FEIL ved oppretting av admin"; exit 1; }
+  php artisan app:make-admin "$ADMIN_EMAIL" --name="Svein Arthur Jensen" --if-missing 2>&1) || { echo "$ADMIN_OUT"; echo "FEIL ved oppretting av admin"; exit 1; }
 echo "$ADMIN_OUT" | grep -v PASSORD
 ADMIN_PASS=$(echo "$ADMIN_OUT" | sed -n 's/^PASSORD: //p')
 
+APP_URL=$(grep ^APP_URL= "$TARGET/.env" | cut -d= -f2-)
 say "Helsesjekk"
 sleep 5
 if curl -fsS "$APP_URL/api/health" ; then echo; echo "API svarer."; else echo "API svarer ikke ennå – sjekk: cd $TARGET && docker compose logs --tail=100 app nginx caddy"; fi
@@ -135,13 +136,13 @@ cat <<DONE
 
   URL:        $APP_URL
   Mappe:      $TARGET
-  Admin:      $ADMIN_EMAIL
-  Passord:    $ADMIN_PASS      (bytt ved første innlogging)
+  Admin:      $ADMIN_EMAIL${ADMIN_PASS:+
+  Passord:    $ADMIN_PASS      (bytt ved første innlogging)}
   Logg:       $LOG
 
   Test:
     TOKEN=\$(curl -s -X POST $APP_URL/api/auth/login -H 'Content-Type: application/json' \\
-      -d '{"email":"$ADMIN_EMAIL","password":"$ADMIN_PASS"}' | jq -r .token)
+      -d '{"email":"$ADMIN_EMAIL","password":"<passord>"}' | jq -r .token)
     curl -s $APP_URL/api/entities/Property -H "Authorization: Bearer \$TOKEN"
 
   Dataimport (når eksport fra Base44 ligger i $TARGET/export):
