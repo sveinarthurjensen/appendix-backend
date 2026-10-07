@@ -15,6 +15,10 @@ fi
 cp -r "$CODE/app/." "$SRC/app/"
 cp "$CODE/routes/api.php" "$SRC/routes/api.php"
 cp "$CODE/routes/console.php" "$SRC/routes/console.php"
+# Registrer FunctionsServiceProvider (observers m.m.)
+if ! grep -q FunctionsServiceProvider "$SRC/bootstrap/providers.php"; then
+  sed -i "s|App\\\\Providers\\\\AppServiceProvider::class,|App\\\\Providers\\\\AppServiceProvider::class,\n    App\\\\Providers\\\\FunctionsServiceProvider::class,|" "$SRC/bootstrap/providers.php"
+fi
 rm -f "$SRC/database/migrations/0001_01_01_000000_create_users_table.php"
 cp "$CODE"/database/migrations/*.php "$SRC/database/migrations/"
 
