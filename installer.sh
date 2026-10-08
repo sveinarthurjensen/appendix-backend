@@ -75,6 +75,10 @@ if [[ ! -f "$TARGET/.env" ]]; then
 else
   echo ".env finnes – beholdes"
 fi
+if ! grep -q '^BACKUP_ENCRYPTION_KEY=.\+' "$TARGET/.env"; then
+  echo "BACKUP_ENCRYPTION_KEY=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 48)" >> "$TARGET/.env"
+  echo "Genererte BACKUP_ENCRYPTION_KEY – TA KOPI av denne fra .env og legg i passordhvelvet; uten den kan ikke OneDrive-backup gjenopprettes"
+fi
 if [[ -n "$PORT" ]] && grep -q "caddy-site.sh" "$TARGET/docker-compose.override.yml" 2>/dev/null; then
   echo "Caddy-oppsett finnes allerede (caddy-site.sh) – beholder det, ignorerer --port"
   PORT=""

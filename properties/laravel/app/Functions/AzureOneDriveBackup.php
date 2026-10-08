@@ -50,6 +50,15 @@ class AzureOneDriveBackup extends Base44Function
             throw new FunctionException("Ingen backup-fil funnet i {$dir}", 500);
         }
 
+        // Krypter dumpen før den forlater serveren (AES-256-CBC + PBKDF2 via openssl; nøkkel = BACKUP_ENCRYPTION_KEY).
+        // Dekryptering: openssl enc -d -aes-256-cbc -pbkdf2 -in fil.enc -out fil -pass env:BACKUP_ENCRYPTION_KEY
+        $key = (string) config('services.backup.encryption_key');
+        if ($key === '') {
+            $this->logFailure(basename($file), 'BACKUP_ENCRYPTION_KEY mangler – nekter å laste opp ukryptert backup');
+            throw new FunctionException('BACKUP_ENCRYPTION_KEY mangler – backup lastes ikke opp ukryptert', 500);
+        }
+        $file = $this->encrypt($file, $key);
+
         $fileName = basename($file);
         $fileSize = (int) filesize($file);
         $graph = app(MicrosoftGraph::class);
@@ -112,6 +121,22 @@ class AzureOneDriveBackup extends Base44Function
     }
 
     /** Graph upload session: createUploadSession + chunkede PUT-er mot den forhåndsautoriserte uploadUrl. */
+    /** Krypterer til en midlertidig fil (slettes av OS/tmp-opprydding); returnerer sti. */
+    private function encrypt(string $file, string $key): string
+    {
+        $out = sys_get_temp_dir() . '/' . basename($file) . '.enc';
+        $cmd = sprintf('openssl enc -aes-256-cbc -pbkdf2 -salt -in %s -out %s -pass env:BACKUP_ENCRYPTION_KEY 2>&1',
+            escapeshellarg($file), escapeshellarg($out));
+        $proc = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, ['BACKUP_ENCRYPTION_KEY' => $key, 'PATH' => getenv('PATH')]);
+        $err = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
+        $rc = proc_close($proc);
+        if ($rc !== 0 || !is_file($out) || filesize($out) === 0) {
+            throw new FunctionException('Kryptering av backup feilet: ' . trim($err), 500);
+        }
+        register_shutdown_function(fn () => @unlink($out));
+        return $out;
+    }
+
     private function uploadLarge(MicrosoftGraph $graph, string $itemPath, string $file, int $fileSize): array
     {
         $session = $graph->post($itemPath . ':/createUploadSession', [

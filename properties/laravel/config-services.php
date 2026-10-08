@@ -10,7 +10,7 @@ return [
     // onedrive_user: brukeren hvis OneDrive backupen lastes opp til (azureOneDriveBackup). Krever Files.ReadWrite.All (application).
     'graph' => ['tenant' => env('AZURE_TENANT_ID'), 'client_id' => env('AZURE_CLIENT_ID'), 'client_secret' => env('AZURE_CLIENT_SECRET'), 'onedrive_user' => env('ONEDRIVE_USER_EMAIL')],
     // azureOneDriveBackup: katalogen pgbackup-containeren skriver pg_dump-filer til (montert read-only i app/scheduler), og målmappe i OneDrive.
-    'backup' => ['dir' => env('BACKUP_DIR', '/backups'), 'onedrive_folder' => env('ONEDRIVE_BACKUP_FOLDER', 'Backups/AppendixProperties')],
+    'backup' => ['encryption_key' => env('BACKUP_ENCRYPTION_KEY'), 'dir' => env('BACKUP_DIR', '/backups'), 'onedrive_folder' => env('ONEDRIVE_BACKUP_FOLDER', 'Backups/AppendixProperties')],
     // sendToHolding / syncAllToMaster: Appendix Holding-appen – peker på Base44 inntil Holding også er flyttet.
     'holding' => [
         'locations_url' => env('HOLDING_LOCATIONS_URL', 'https://api.base44.app/api/apps/692a2988474b6d9f2ec1b7e6/functions/receiveLocationsData'),
@@ -22,7 +22,7 @@ return [
         'app_id' => env('BASE44_APP_ID', '692a283741b5c0d24fceeeb9'),
     ],
     // contractDeadlineReminders / kpiRentAdjustmentReminder: admin som får påminnelsene (var hardkodet i originalen).
-    'reminders' => ['admin_email' => env('REMINDER_ADMIN_EMAIL', 'svein.arthur.jensen@gmail.com'), 'admin_phone' => env('REMINDER_ADMIN_PHONE', '+4790620833')],
+    'reminders' => ['admin_email' => env('REMINDER_ADMIN_EMAIL', 'svein.arthur.jensen@appendixholding.no'), 'admin_phone' => env('REMINDER_ADMIN_PHONE', '+4790620833')],
     // runSecurityAudit: flere admin-brukere enn dette gir warning.
     'security' => ['max_admins' => (int) env('SECURITY_MAX_ADMINS', 5)],
     'signicat' => ['client_id' => env('SIGNICAT_CLIENT_ID'), 'client_secret' => env('SIGNICAT_CLIENT_SECRET')],

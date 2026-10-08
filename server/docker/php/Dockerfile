@@ -1,7 +1,7 @@
 FROM php:8.3-fpm-alpine
 
 RUN apk add --no-cache \
-      git unzip icu-dev libzip-dev postgresql-dev oniguruma-dev \
+      git unzip openssl icu-dev libzip-dev postgresql-dev oniguruma-dev \
       libpng-dev libjpeg-turbo-dev freetype-dev linux-headers $PHPIZE_DEPS \
  && docker-php-ext-configure gd --with-freetype --with-jpeg \
  && docker-php-ext-install -j$(nproc) pdo_pgsql pgsql intl zip bcmath pcntl opcache gd mbstring \
