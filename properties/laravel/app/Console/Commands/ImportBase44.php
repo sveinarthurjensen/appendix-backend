@@ -58,8 +58,16 @@ class ImportBase44 extends Command
                         $batch[] = $row;
                         $n++;
                     }
-                    if (!$dry) {
-                        DB::table($model->getTable())->upsert($batch, ['id'], array_keys($batch[0]));
+                    if (!$dry && $batch) {
+                        // Alle rader må ha samme kolonner (Base44 utelater tomme felt) → fyll ut med null
+                        $cols = [];
+                        foreach ($batch as $b) {
+                            foreach (array_keys($b) as $c) {
+                                $cols[$c] = true;
+                            }
+                        }
+                        $batch = array_map(fn ($b) => array_merge(array_fill_keys(array_keys($cols), null), $b), $batch);
+                        DB::table($model->getTable())->upsert($batch, ['id'], array_keys($cols));
                     }
                 }
             });

@@ -84,6 +84,12 @@ return [
     // Brevhode-logo for exportDocumentForSigning (PDF). Standard = Base44-media-URL fra originalen; bytt til egen S3-URL.
     'letters' => ['logo_url' => env('LETTER_LOGO_URL', 'https://media.base44.com/images/public/692a283741b5c0d24fceeeb9/16d7b16e8_LogoAppendixProperties-horisontal-2026.png')],
     // Diagnose (/api/_diag). Nøkkelstatus beregnes her (når config bygges/caches) – verdiene selv lagres aldri.
+    // Engangs dataflytting fra Base44 (php artisan base44:pull). Fjern BASE44_API_KEY fra .env når flyttingen er ferdig.
+    'base44' => [
+        'api_key' => env('BASE44_API_KEY'),
+        'app_id' => env('BASE44_APP_ID', '692a283741b5c0d24fceeeb9'),
+        'api_url' => env('BASE44_API_URL', 'https://app.base44.com/api'),
+    ],
     'diag' => [
         'token' => env('DIAG_TOKEN'),
         'key_status' => (function () {
