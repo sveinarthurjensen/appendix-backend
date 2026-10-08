@@ -15,6 +15,14 @@ use Illuminate\Support\Facades\Route;
  *   })
  */
 
+// Forside – enkel statusside i stedet for 404
+Route::view('/', 'oidc.error', [
+    'title' => 'Appendix API',
+    'message' => 'Felles backend og innlogging for Appendix-konsernet.',
+    'detail' => null,
+    'back' => null,
+])->name('home');
+
 // Discovery
 Route::get('/.well-known/openid-configuration', [ProviderController::class, 'discovery'])->name('oidc.discovery');
 

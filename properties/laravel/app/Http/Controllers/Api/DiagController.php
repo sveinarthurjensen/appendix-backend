@@ -63,6 +63,7 @@ class DiagController extends Controller
             ],
             'keys' => $keys,
             'database' => $this->db(),
+            'oidc_flows' => $this->flows(),
             'queue' => ['connection' => config('queue.default')],
             'log_errors' => $this->logErrors(),
             'time' => now()->toIso8601String(),
@@ -79,6 +80,19 @@ class DiagController extends Controller
             }
         }
         return $out;
+    }
+
+    private function flows(): array
+    {
+        try {
+            return \App\Models\OidcAuthFlow::query()
+                ->where('created_at', '>=', now()->subDay())
+                ->orderByDesc('created_at')->limit(10)
+                ->get(['client_id', 'status', 'source', 'error', 'created_at', 'expires_at', 'completed_at', 'used_at'])
+                ->toArray();
+        } catch (\Throwable $e) {
+            return ['error' => $e->getMessage()];
+        }
     }
 
     private function db(): array

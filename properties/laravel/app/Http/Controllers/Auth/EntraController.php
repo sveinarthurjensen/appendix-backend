@@ -151,8 +151,22 @@ class EntraController extends Controller
         if ($flow) {
             return redirect()->away($this->oidc->complete($flow, $user, 'entra', 'urn:aprop:entra', ['entra', 'mfa']));
         }
-        // Ingen OIDC-flyt (direkte innlogging) – send til forsiden
-        return redirect()->away($this->oidc->issuer());
+        if (!empty($sess['flow'])) {
+            // Flyten fra appen er utløpt/brukt mens brukeren var hos Microsoft
+            Log::warning('Entra-callback: OIDC-flyt utløpt eller ikke ventende', ['flow' => $sess['flow'], 'user' => $user->email]);
+            return $this->errorPage(
+                'Innloggingsforespørselen er utløpt',
+                'Du er logget inn med Microsoft, men forespørselen fra appen var utløpt (gyldig i 10 minutter). Gå tilbake til appen og trykk «Logg inn» på nytt.',
+                400
+            );
+        }
+        // Ingen OIDC-flyt (direkte innlogging) – vis kvittering
+        return response()->view('oidc.error', [
+            'title' => 'Innlogget',
+            'message' => 'Du er logget inn som ' . $user->email . '. Du kan lukke dette vinduet og gå tilbake til appen.',
+            'detail' => null,
+            'back' => null,
+        ]);
     }
 
     // ---------- hjelpere ----------
