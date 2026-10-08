@@ -125,6 +125,9 @@ else
 fi
 sudo -u "$DEPLOY_USER" -H docker compose run --rm --user "$(id -u $DEPLOY_USER):$(id -g $DEPLOY_USER)" -e HOME=/tmp app php artisan optimize
 sudo -u "$DEPLOY_USER" -H docker compose up -d
+# .env er bind-montert som enkeltfil; sed -i gir ny inode som kjørende containere ikke ser → alltid gjenskap app-containerne
+sudo -u "$DEPLOY_USER" -H docker compose up -d --force-recreate app horizon scheduler
+sudo -u "$DEPLOY_USER" -H docker compose restart nginx >/dev/null
 
 say "Oppretter første admin-bruker"
 ADMIN_EMAIL="svein.arthur.jensen@appendixholding.no"

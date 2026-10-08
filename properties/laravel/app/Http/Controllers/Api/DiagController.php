@@ -30,7 +30,12 @@ class DiagController extends Controller
         // env() virker ikke når config er cachet – les .env direkte (filen er montert i containeren)
         $envFile = $this->readEnv();
         $expected = (string) ($envFile['DIAG_TOKEN'] ?? '');
-        abort_if($expected === '' || !hash_equals($expected, (string) $request->query('token', '')), 404);
+        if ($expected === '') {
+            return response()->json(['error' => 'DIAG_TOKEN ikke satt i .env (eller .env ikke synlig i containeren)'], 503);
+        }
+        if (!hash_equals($expected, (string) $request->query('token', ''))) {
+            return response()->json(['error' => 'feil nøkkel'], 403);
+        }
 
         $deploy = @json_decode((string) @file_get_contents('/deploy/status.json'), true) ?: null;
         $deployLog = @file_get_contents('/deploy/last-deploy.log');

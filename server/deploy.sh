@@ -54,6 +54,7 @@ runapp php artisan migrate --force
 runapp php artisan optimize
 
 docker compose up -d
+docker compose up -d --force-recreate app horizon scheduler
 docker compose restart nginx >/dev/null   # sikrer at nginx ser ny app-container
 docker compose exec -T horizon php artisan horizon:terminate >/dev/null 2>&1 || true   # Horizon starter på nytt med ny kode
 docker compose ps
