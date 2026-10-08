@@ -29,6 +29,18 @@ return [
     // Min side / PortalThread: OIDC_ISSUER (base-URL for /i/<kode>, /minside, /CaseDetail) og
     // VARSEL_MOTTAKERE ("epost:mobil;epost:mobil" – ansatte som varsles ved ny henvendelse; tom = standard i PortalThread).
     'portal' => ['issuer' => env('OIDC_ISSUER', 'https://aprop.no'), 'varsel_mottakere' => env('VARSEL_MOTTAKERE')],
+    // Offentlige webhook-/API-endepunkt (routes/api.php utenfor auth:sanctum):
+    //  receive_locations_token: Bearer-token andre apper (Prime Leie, Medhjelp, Holding) sender til receiveLocationsData
+    //                           (originalen gjenbrukte MASTER_SYNC_TOKEN – faller tilbake til samme env-variabel her).
+    //  admin_status_token:      header «x-arbeidsflate-nokkel» som Arbeidsflaten sender til adminStatus (secret ARBEIDSFLATE_NOKKEL).
+    //  admin_status_base_url:   base-URL for lenker i adminStatus-svaret (secret APP_BASE_URL).
+    //  motta_henvendelse_origins: ekstra tillatte CORS-opphav for kontaktskjemaet (kommaseparert), i tillegg til standardlisten i MottaHenvendelse.
+    'webhooks' => [
+        'receive_locations_token' => env('RECEIVE_LOCATIONS_TOKEN', env('MASTER_SYNC_TOKEN')),
+        'admin_status_token' => env('ARBEIDSFLATE_NOKKEL'),
+        'admin_status_base_url' => env('APP_BASE_URL', 'https://aprop.no'),
+        'motta_henvendelse_origins' => env('MOTTA_HENVENDELSE_ORIGINS'),
+    ],
     // Brevhode-logo for exportDocumentForSigning (PDF). Standard = Base44-media-URL fra originalen; bytt til egen S3-URL.
     'letters' => ['logo_url' => env('LETTER_LOGO_URL', 'https://media.base44.com/images/public/692a283741b5c0d24fceeeb9/16d7b16e8_LogoAppendixProperties-horisontal-2026.png')],
 ];

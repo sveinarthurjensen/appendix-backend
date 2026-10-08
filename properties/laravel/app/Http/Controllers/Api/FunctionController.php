@@ -38,6 +38,38 @@ class FunctionController extends Controller
         return app(\App\Functions\ExportPropertyIcal::class)->response($request->query());
     }
 
+    // ---------- Offentlige endepunkt (routes/api.php utenfor auth:sanctum, throttle:30,1) ----------
+
+    /** POST|OPTIONS /api/functions/mottaHenvendelse – kontaktskjemaene på aprop.no / geilolodge.com (CORS) */
+    public function mottaHenvendelse(Request $request)
+    {
+        return app(\App\Functions\MottaHenvendelse::class)->response($request);
+    }
+
+    /** POST /api/functions/receiveLocationsData – webhook fra andre apper, Bearer-token */
+    public function receiveLocationsData(Request $request)
+    {
+        return app(\App\Functions\ReceiveLocationsData::class)->response($request);
+    }
+
+    /** GET|OPTIONS /api/functions/offentligeUtleieobjekter – ledige utleieobjekter for nettsiden */
+    public function offentligeUtleieobjekter(Request $request)
+    {
+        return app(\App\Functions\OffentligeUtleieobjekter::class)->response($request);
+    }
+
+    /** GET /api/functions/adminStatus – statusoversikt for Arbeidsflaten (header x-arbeidsflate-nokkel) */
+    public function adminStatus(Request $request)
+    {
+        return app(\App\Functions\AdminStatus::class)->response($request);
+    }
+
+    /** GET|POST /api/functions/getFeatureFlags – UI-flagg, ingen innlogging */
+    public function getFeatureFlags(Request $request)
+    {
+        return app(\App\Functions\GetFeatureFlags::class)->response($request);
+    }
+
     /** GET /api/functions – hvilke funksjoner som finnes i Laravel (brukes av shimen/feilsøking) */
     public function index(): JsonResponse
     {
