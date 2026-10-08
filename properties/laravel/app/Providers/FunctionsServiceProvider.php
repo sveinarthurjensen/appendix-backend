@@ -27,9 +27,10 @@ class FunctionsServiceProvider extends ServiceProvider
     {
         // Laravel står bak Caddy (TLS) → nginx → php-fpm og ser selv bare http.
         // Tving https i alle genererte URL-er (OIDC-redirects, discovery) når APP_URL er https.
-        if (str_starts_with((string) config('app.url'), 'https://')) {
+        $root = (string) (config('services.oidc.issuer') ?: config('app.url'));
+        if (str_starts_with($root, 'https://')) {
             URL::forceScheme('https');
-            URL::forceRootUrl(config('app.url'));
+            URL::forceRootUrl(rtrim($root, '/'));
         }
 
         Contract::observe(ContractObserver::class);

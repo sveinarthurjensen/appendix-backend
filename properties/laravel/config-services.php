@@ -55,7 +55,7 @@ return [
         'tenant' => env('ENTRA_LOGIN_TENANT_ID', env('AZURE_TENANT_ID')),
         'client_id' => env('ENTRA_LOGIN_CLIENT_ID'),
         'client_secret' => env('ENTRA_LOGIN_CLIENT_SECRET'),
-        'redirect_uri' => env('ENTRA_LOGIN_REDIRECT_URI'),
+        'redirect_uri' => env('ENTRA_LOGIN_REDIRECT_URI') ?: rtrim(env('OIDC_ISSUER', 'https://api.appendixholding.no'), '/') . '/auth/entra/callback',
     ],
     // Min side / PortalThread: OIDC_ISSUER (base-URL for /i/<kode>, /minside, /CaseDetail) og
     // VARSEL_MOTTAKERE ("epost:mobil;epost:mobil" – ansatte som varsles ved ny henvendelse; tom = standard i PortalThread).
