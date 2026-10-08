@@ -74,9 +74,12 @@ class PullBase44 extends Command
         $cursor = null;
         do {
             $query = $cursor ? ['cursor' => $cursor] : ['limit' => 500, 'sort' => 'created_date'];
-            $res = Http::withHeaders(['api_key' => $key, 'Accept' => 'application/json'])
-                ->timeout(60)->retry(2, 500)
-                ->get("$api/apps/$app/entities/$entity/v2/list", $query);
+            $url = "$api/apps/$app/entities/$entity/v2/list";
+            // Personlig access token: Authorization: Bearer. Eldre konto-API-nøkkel: api_key-header (fallback ved 401).
+            $res = Http::withToken($key)->acceptJson()->timeout(60)->retry(2, 500, throw: false)->get($url, $query);
+            if ($res->status() === 401) {
+                $res = Http::withHeaders(['api_key' => $key])->acceptJson()->timeout(60)->get($url, $query);
+            }
             if (!$res->ok()) {
                 throw new \RuntimeException('HTTP ' . $res->status() . ' ' . mb_substr($res->body(), 0, 120));
             }
