@@ -48,6 +48,9 @@ cp -r "$CODE/resources/views/." "$SRC/resources/views/"
 python3 - "$SRC/bootstrap/app.php" <<'PY'
 import sys,re
 p=sys.argv[1]; s=open(p).read()
+if 'trustProxies' not in s:
+    s=s.replace("->withMiddleware(function (Middleware $middleware): void {",
+                "->withMiddleware(function (Middleware $middleware): void {\n        $middleware->trustProxies(at: '*');",1)
 if 'validateCsrfTokens' not in s:
     s=s.replace("->withMiddleware(function (Middleware $middleware): void {",
                 "->withMiddleware(function (Middleware $middleware): void {\n        $middleware->validateCsrfTokens(except: ['oidc/token', 'functions/oidcToken']);",1)

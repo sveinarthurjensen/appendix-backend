@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Contract;
 use App\Observers\ContractObserver;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -24,6 +25,13 @@ class FunctionsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Laravel står bak Caddy (TLS) → nginx → php-fpm og ser selv bare http.
+        // Tving https i alle genererte URL-er (OIDC-redirects, discovery) når APP_URL er https.
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+            URL::forceRootUrl(config('app.url'));
+        }
+
         Contract::observe(ContractObserver::class);
     }
 }
