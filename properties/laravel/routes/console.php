@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Schedule;
  * Entity-workflowen «Contract status guard (update)» er IKKE en planlagt jobb: den er
  * App\Observers\ContractObserver (registrert i App\Providers\FunctionsServiceProvider).
  */
+// Av som standard (SCHEDULER_ENABLED) – Base44 kjører fortsatt de samme workflowene til cutover.
+if (!config('services.functions.scheduler_enabled')) {
+    return;
+}
+
 $run = fn (string $class) => fn () => app($class)(null, []);
 
 // «Velkomst-e-post for inviterte (sjekk hvert 10. min)» – interval 10 min

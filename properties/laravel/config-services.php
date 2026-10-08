@@ -1,7 +1,9 @@
 <?php
 // Legges inn i config/services.php av install-properties.sh (nøkkelen 'appendix' merges inn)
 return [
-    'functions' => ['url' => env('FUNCTIONS_URL'), 'token' => env('FUNCTIONS_TOKEN')],
+    // scheduler_enabled: planlagte jobber (routes/console.php) kjører bare når SCHEDULER_ENABLED=true. Skal være av så lenge
+    // Base44 fortsatt kjører de samme workflowene (ellers får mottakere SMS/e-post/varsler i duplikat). Slås på ved cutover.
+    'functions' => ['url' => env('FUNCTIONS_URL'), 'token' => env('FUNCTIONS_TOKEN'), 'scheduler_enabled' => env('SCHEDULER_ENABLED', false)],
     'sveve' => ['username' => env('SVEVE_USERNAME'), 'password' => env('SVEVE_PASSWORD')],
     'anthropic' => ['key' => env('ANTHROPIC_API_KEY'), 'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-4-5')],
     'google_maps' => ['key' => env('GOOGLE_MAPS_API_KEY')],
