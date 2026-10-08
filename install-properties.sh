@@ -15,6 +15,13 @@ fi
 cp -r "$CODE/app/." "$SRC/app/"
 cp "$CODE/routes/api.php" "$SRC/routes/api.php"
 cp "$CODE/routes/console.php" "$SRC/routes/console.php"
+# Web-ruter (OIDC-utsteder + Entra/BankID-innlogging, sesjonsbasert) erstatter Laravel sin standard web.php.
+# NB: CSRF-unntak for token-endepunktet må ligge i bootstrap/app.php (gjøres én gang, manuelt):
+#   $middleware->validateCsrfTokens(except: ['oidc/token', 'functions/oidcToken']);
+cp "$CODE/routes/web.php" "$SRC/routes/web.php"
+if ! grep -q "oidc/token" "$SRC/bootstrap/app.php" 2>/dev/null; then
+  echo "ADVARSEL: bootstrap/app.php mangler CSRF-unntak for oidc/token – se kommentar i routes/web.php"
+fi
 # Registrer FunctionsServiceProvider (observers m.m.)
 if ! grep -q FunctionsServiceProvider "$SRC/bootstrap/providers.php"; then
   sed -i "s|App\\\\Providers\\\\AppServiceProvider::class,|App\\\\Providers\\\\AppServiceProvider::class,\n    App\\\\Providers\\\\FunctionsServiceProvider::class,|" "$SRC/bootstrap/providers.php"
@@ -33,7 +40,19 @@ s=re.sub(r"\n    // --- appendix-backend start ---.*?// --- appendix-backend slu
 s=re.sub(r"(return \[\n)", r"\1    // --- appendix-backend start ---"+body.replace('\\','\\\\')+"    // --- appendix-backend slutt ---\n", s, count=1)
 open(p,'w').write(s)
 PY
-cp "$CODE"/resources -r "$SRC/" 2>/dev/null || true
+# Blade-maler (e-post + OIDC innloggings-/feilsider): resources/views/** kopieres inn, eksisterende filer overskrives
+mkdir -p "$SRC/resources/views"
+cp -r "$CODE/resources/views/." "$SRC/resources/views/"
+
+# CSRF-unntak for OIDC token-endepunktet (bootstrap/app.php) – idempotent
+python3 - "$SRC/bootstrap/app.php" <<'PY'
+import sys,re
+p=sys.argv[1]; s=open(p).read()
+if 'validateCsrfTokens' not in s:
+    s=s.replace("->withMiddleware(function (Middleware $middleware): void {",
+                "->withMiddleware(function (Middleware $middleware): void {\n        $middleware->validateCsrfTokens(except: ['oidc/token', 'functions/oidcToken']);",1)
+    open(p,'w').write(s)
+PY
 
 docker compose run --rm --no-deps --user "$(id -u):$(id -g)" -e HOME=/tmp -e COMPOSER_HOME=/tmp/composer app composer dump-autoload --optimize --quiet
 echo "Appendix Properties-kode lagt inn i $SRC"

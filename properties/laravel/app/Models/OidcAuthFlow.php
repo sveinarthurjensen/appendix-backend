@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Base44Entity;
+use App\Models\Concerns\OidcAuthFlowTokens;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -40,7 +41,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class OidcAuthFlow extends Model
 {
-    use Base44Entity, SoftDeletes;
+    use Base44Entity, OidcAuthFlowTokens, SoftDeletes;
 
     public const APP_ID = 'appendix_properties';
     public const ENTITY = 'OidcAuthFlow';

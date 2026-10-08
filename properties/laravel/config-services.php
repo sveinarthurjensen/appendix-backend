@@ -25,7 +25,31 @@ return [
     'reminders' => ['admin_email' => env('REMINDER_ADMIN_EMAIL', 'svein.arthur.jensen@appendixholding.no'), 'admin_phone' => env('REMINDER_ADMIN_PHONE', '+4790620833')],
     // runSecurityAudit: flere admin-brukere enn dette gir warning.
     'security' => ['max_admins' => (int) env('SECURITY_MAX_ADMINS', 5)],
-    'signicat' => ['client_id' => env('SIGNICAT_CLIENT_ID'), 'client_secret' => env('SIGNICAT_CLIENT_SECRET')],
+    'signicat' => ['client_id' => env('SIGNICAT_CLIENT_ID'), 'client_secret' => env('SIGNICAT_CLIENT_SECRET'), 'discovery_url' => env('SIGNICAT_DISCOVERY_URL')],
+    // Fase 6: Laravel som OIDC-utsteder (app/Services/Oidc). issuer = iss-claim og base for /oidc/* (samme OIDC_ISSUER som portal).
+    // clients: client_id → navn, hemmelighet (tom = public client med PKCE), tillatte redirect_uris.
+    // Base44-utstederen godtok alle klienter; her må klient-appene registreres. Standardklienten er
+    // Base44-plattformens SSO for Appendix Properties (OIDC_CLIENT_ID/OIDC_CLIENT_SECRET/OIDC_REDIRECT_URIS, kommaseparert).
+    'oidc' => [
+        'issuer' => env('OIDC_ISSUER', 'https://aprop.no'),
+        'clients' => [
+            env('OIDC_CLIENT_ID', 'aprop-base44-sso') => [
+                'name' => env('OIDC_CLIENT_NAME', 'Appendix Properties'),
+                'secret' => env('OIDC_CLIENT_SECRET'),
+                'redirect_uris' => env('OIDC_REDIRECT_URIS', 'https://aprop.no/auth/callback,https://app.aprop.no/auth/callback'),
+                'require_pkce' => false,
+            ],
+            // Flere klienter (andre apper i Appendix-familien) legges inn her: 'klient-id' => ['name' => …, 'secret' => …, 'redirect_uris' => […]]
+        ],
+    ],
+    // Entra ID-innlogging for faste ansatte – EGEN app-registrering (ikke graph/e-post). redirect_uri må registreres i Entra som
+    // «Web»-plattform og peke på {issuer}/auth/entra/callback. Tenant kan være GUID eller verifisert domene.
+    'entra_login' => [
+        'tenant' => env('ENTRA_LOGIN_TENANT_ID', env('AZURE_TENANT_ID')),
+        'client_id' => env('ENTRA_LOGIN_CLIENT_ID'),
+        'client_secret' => env('ENTRA_LOGIN_CLIENT_SECRET'),
+        'redirect_uri' => env('ENTRA_LOGIN_REDIRECT_URI'),
+    ],
     // Min side / PortalThread: OIDC_ISSUER (base-URL for /i/<kode>, /minside, /CaseDetail) og
     // VARSEL_MOTTAKERE ("epost:mobil;epost:mobil" – ansatte som varsles ved ny henvendelse; tom = standard i PortalThread).
     'portal' => ['issuer' => env('OIDC_ISSUER', 'https://aprop.no'), 'varsel_mottakere' => env('VARSEL_MOTTAKERE')],
