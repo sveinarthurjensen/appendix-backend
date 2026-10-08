@@ -17,11 +17,12 @@ use Illuminate\Support\Str;
  */
 trait Base44Entity
 {
-    public const CREATED_AT = 'created_date';
-    public const UPDATED_AT = 'updated_date';
-
-    public $incrementing = false;
-    protected $keyType = 'string';
+    /** Streng-ID (ikke auto-increment). Settes her fordi trait-egenskaper ikke kan overstyre Model sine. */
+    public function initializeBase44Entity(): void
+    {
+        $this->incrementing = false;
+        $this->keyType = 'string';
+    }
 
     public static function bootBase44Entity(): void
     {

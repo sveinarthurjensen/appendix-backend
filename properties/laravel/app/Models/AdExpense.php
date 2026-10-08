@@ -27,6 +27,9 @@ class AdExpense extends Model
 {
     use Base44Entity, SoftDeletes;
 
+    public const CREATED_AT = 'created_date';
+    public const UPDATED_AT = 'updated_date';
+
     public const APP_ID = 'appendix_properties';
     public const ENTITY = 'AdExpense';
 
