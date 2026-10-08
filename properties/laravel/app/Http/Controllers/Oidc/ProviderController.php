@@ -56,7 +56,7 @@ class ProviderController extends Controller
 
         /** @var User|null $user */
         $user = Auth::guard('web')->user();
-        if ($user && $request->query('prompt') !== 'login') {
+        if ($user && $request->query('prompt') !== 'login' && !$flow->invite_token) {
             $provider = (string) ($user->last_login_provider ?: $user->identity_provider ?: '');
             if ($provider !== '' && $user->canLogin($provider)) {
                 $amr = $provider === User::PROVIDER_ENTRA ? ['entra', 'mfa'] : [$provider];

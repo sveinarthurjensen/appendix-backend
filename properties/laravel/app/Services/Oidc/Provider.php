@@ -150,6 +150,8 @@ class Provider
             'created_at' => now(),
             'expires_at' => now()->addSeconds(self::AUTH_CODE_TTL),
             'ip' => $request->ip(),
+            // Invitasjonslenke: /oidc/authorize?...&invite_token=… → BankID-callback binder fnr til kontoen
+            'invite_token' => substr((string) $request->query('invite_token', ''), 0, 128) ?: null,
         ]);
 
         $this->audit('oidc_authorize', ['ip' => $request->ip(), 'detail' => "client=$clientId"]);

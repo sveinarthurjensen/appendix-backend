@@ -46,5 +46,6 @@ Route::get('/functions/oidcJwks', [ProviderController::class, 'jwks']);
 Route::prefix('auth')->name('auth.')->group(function () {
     Route::get('/entra/redirect', [EntraController::class, 'redirect'])->name('entra.redirect');
     Route::get('/entra/callback', [EntraController::class, 'callback'])->name('entra.callback');
-    Route::get('/bankid/redirect', [BankIdController::class, 'redirect'])->name('bankid.redirect'); // 501 «kommer»
+    Route::get('/bankid/redirect', [BankIdController::class, 'redirect'])->name('bankid.redirect');
+    Route::get('/bankid/callback', [BankIdController::class, 'callback'])->name('bankid.callback');
 });

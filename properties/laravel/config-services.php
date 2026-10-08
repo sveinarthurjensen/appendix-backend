@@ -25,7 +25,16 @@ return [
     'reminders' => ['admin_email' => env('REMINDER_ADMIN_EMAIL', 'svein.arthur.jensen@appendixholding.no'), 'admin_phone' => env('REMINDER_ADMIN_PHONE', '+4790620833')],
     // runSecurityAudit: flere admin-brukere enn dette gir warning.
     'security' => ['max_admins' => (int) env('SECURITY_MAX_ADMINS', 5)],
-    'signicat' => ['client_id' => env('SIGNICAT_CLIENT_ID'), 'client_secret' => env('SIGNICAT_CLIENT_SECRET'), 'discovery_url' => env('SIGNICAT_DISCOVERY_URL')],
+    // BankID via Signicat (konsulenter, pasienter/parter). discovery_url f.eks. https://<konto>.app.signicat.com/auth/open/.well-known/openid-configuration
+    // Redirect URI som må registreres hos Signicat: {OIDC_ISSUER}/auth/bankid/callback
+    'signicat' => [
+        'client_id' => env('SIGNICAT_CLIENT_ID'),
+        'client_secret' => env('SIGNICAT_CLIENT_SECRET'),
+        'discovery_url' => env('SIGNICAT_DISCOVERY_URL'),
+        'scope' => env('SIGNICAT_SCOPE', 'openid profile nin'),
+        'acr_values' => env('SIGNICAT_ACR_VALUES', 'idp:nbid'),
+        'redirect_uri' => env('SIGNICAT_REDIRECT_URI') ?: rtrim((string) env('OIDC_ISSUER', 'https://api.appendixholding.no'), '/') . '/auth/bankid/callback',
+    ],
     // Fase 6: Laravel som OIDC-utsteder (app/Services/Oidc). issuer = iss-claim og base for /oidc/* (samme OIDC_ISSUER som portal).
     // clients: client_id → navn, hemmelighet (tom = public client med PKCE), tillatte redirect_uris.
     // Base44-utstederen godtok alle klienter; her må klient-appene registreres. Standardklienten er
@@ -81,7 +90,7 @@ return [
             $out = [];
             foreach (['AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET', 'ENTRA_LOGIN_CLIENT_ID', 'ENTRA_LOGIN_CLIENT_SECRET',
                 'SVEVE_USERNAME', 'SVEVE_PASSWORD', 'ANTHROPIC_API_KEY', 'GOOGLE_MAPS_API_KEY', 'MAIL_USERNAME', 'MAIL_PASSWORD',
-                'SIGNICAT_CLIENT_ID', 'SIGNICAT_CLIENT_SECRET', 'ONEDRIVE_USER_EMAIL', 'BACKUP_ENCRYPTION_KEY',
+                'SIGNICAT_CLIENT_ID', 'SIGNICAT_CLIENT_SECRET', 'SIGNICAT_DISCOVERY_URL', 'ONEDRIVE_USER_EMAIL', 'BACKUP_ENCRYPTION_KEY',
                 'RECEIVE_LOCATIONS_TOKEN', 'ARBEIDSFLATE_NOKKEL', 'OIDC_ISSUER'] as $k) {
                 $v = (string) env($k, '');
                 $out[$k] = $v === '' ? 'mangler' : (preg_match('/\\[20[01]~|\\s/', $v) ? 'SATT, MEN UGYLDIG (mellomrom/innlimingskoder)' : 'satt (' . strlen($v) . ' tegn)');
