@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Support\EntityRegistry;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * php artisan base44:import <mappe-med-json>  [--entity=Property] [--dry-run]
@@ -32,11 +33,19 @@ class ImportBase44 extends Command
 
             $rows = json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
             $model = new $class();
+            $textTypes = ['varchar', 'text', 'bpchar', 'char', 'citext', 'name'];
+            $nonText = [];
+            foreach (Schema::getColumns($model->getTable()) as $col) {
+                if (!in_array(strtolower((string) ($col['type_name'] ?? '')), $textTypes, true)) {
+                    $nonText[$col['name']] = true;
+                }
+            }
             $fillable = array_flip($model->getFillable());
             $casts = $model->getCasts();
             $n = 0; $skippedFields = [];
 
-            DB::transaction(function () use ($rows, $class, $fillable, $casts, $model, $dry, &$n, &$skippedFields) {
+            try {
+            DB::transaction(function () use ($rows, $class, $fillable, $casts, $model, $dry, $nonText, &$n, &$skippedFields) {
                 foreach (array_chunk($rows, 500) as $chunk) {
                     $batch = [];
                     foreach ($chunk as $r) {
@@ -52,8 +61,12 @@ class ImportBase44 extends Command
                             if (isset($row[$k])) continue;
                             if (!isset($fillable[$k])) { $skippedFields[$k] = true; continue; }
                             if (is_array($v)) $v = json_encode($v, JSON_UNESCAPED_UNICODE);
-                            elseif (($casts[$k] ?? null) === 'float' && $v === '') $v = null;
+                            elseif ($v === '' && (isset($nonText[$k]) || ($casts[$k] ?? null) === 'float')) $v = null;
                             $row[$k] = $v;
+                        }
+                        // Base44 gir tom tekst for manglende dato/tall/json → null
+                        foreach (['created_date', 'updated_date'] as $dc) {
+                            if (($row[$dc] ?? null) === '') $row[$dc] = null;
                         }
                         $batch[] = $row;
                         $n++;
@@ -71,6 +84,11 @@ class ImportBase44 extends Command
                     }
                 }
             });
+
+            } catch (\Throwable $e) {
+                $summary[] = [$entity, count($rows), 'FEIL', mb_substr(preg_replace('/\s+/', ' ', $e->getMessage()), 0, 160)];
+                continue;
+            }
 
             $inDb = $dry ? '-' : $class::withoutGlobalScopes()->count();
             $summary[] = [$entity, count($rows), $inDb, $skippedFields ? 'ukjente felt: ' . implode(',', array_keys($skippedFields)) : ''];

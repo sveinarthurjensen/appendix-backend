@@ -21,6 +21,17 @@ class PullBase44 extends Command
     protected $signature = 'base44:pull {--entity=} {--keep} {--dry-run}';
     protected $description = 'Hent data fra Base44 (read-only) og importer i Laravel-tabellene';
 
+    /**
+     * Flyttes IKKE automatisk:
+     *  - sesjons-/token-data fra Base44-utstederen (gamle koder, refresh-tokens og signeringsnøkkel skal ikke leve videre)
+     *  - passkeys (bundet til gammelt domene; bygges på nytt i fase 6 del 3)
+     *  - passordhvelv (kryptert med Base44-nøkkel; krever eget re-krypteringstrinn, se VaultManager)
+     */
+    private const SKIP = [
+        'OidcAuthFlow', 'OidcSigningKey', 'QRSession', 'WebAuthnChallenge', 'WebAuthnCredential',
+        'VaultEntry', 'SecureCredential',
+    ];
+
     public function handle(): int
     {
         $key = (string) config('services.base44.api_key');
@@ -38,6 +49,10 @@ class PullBase44 extends Command
 
         foreach (array_keys(EntityRegistry::MODELS) as $entity) {
             if ($only && $only !== $entity) {
+                continue;
+            }
+            if (!$only && in_array($entity, self::SKIP, true)) {
+                $report[] = [$entity, '-', 'hoppet over (flyttes ikke automatisk)'];
                 continue;
             }
             try {
