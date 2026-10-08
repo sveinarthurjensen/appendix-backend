@@ -20,8 +20,11 @@ fi
 if [[ ! -t 0 ]]; then
   echo "Ingen terminal. Kjør med: ssh -t root@<server> \"bash $0 $*\""; exit 1
 fi
+printf '\e[?2004l'   # slå av «bracketed paste» så innlimt tekst ikke får [200~ … [201~ rundt seg
 for k in "$@"; do
   read -r -s -p "$k: " v; echo
+  # fjern evt. bracketed-paste-koder og omkringliggende mellomrom likevel
+  v=$(printf '%s' "$v" | sed -e 's/\x1b\[20[01]~//g' -e 's/\[20[01]~//g' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
   [[ -n "$v" ]] || { echo "  (tom – hoppet over)"; continue; }
   if grep -qE "^$k=" "$ENV"; then
     sed -i "s|^$k=.*|$k=$v|" "$ENV"
@@ -30,6 +33,9 @@ for k in "$@"; do
   fi
   echo "  satt"
 done
+
+# rydd opp i eventuelle tidligere innlimte bracketed-paste-koder i .env
+sed -i -e 's/\x1b\[20[01]~//g' -e 's/\[20[01]~//g' "$ENV"
 
 cd /srv/appendix-backend
 sudo -u deploy -H docker compose run --rm --user "$(id -u deploy):$(id -g deploy)" -e HOME=/tmp app php artisan optimize >/dev/null
