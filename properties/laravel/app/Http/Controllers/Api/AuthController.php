@@ -31,7 +31,12 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()?->delete();
+        $flow = $request->attributes->get('oidc_flow');
+        if ($flow) {
+            $flow->forceFill(['access_token' => null, 'refresh_token' => null])->save();
+        } else {
+            $request->user()->currentAccessToken()?->delete();
+        }
         return response()->json(['success' => true]);
     }
 }

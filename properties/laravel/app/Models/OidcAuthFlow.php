@@ -88,6 +88,8 @@ class OidcAuthFlow extends Model
         'expires_at' => 'datetime',
         'completed_at' => 'datetime',
         'used_at' => 'datetime',
+        'access_expires_at' => 'datetime',
+        'refresh_expires_at' => 'datetime',
     ];
 
     /** Feltnavn → tillatte verdier (fra enum i skjemaet) */

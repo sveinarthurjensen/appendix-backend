@@ -25,7 +25,7 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::get('/functions/exportPropertyIcal', [FunctionController::class, 'exportPropertyIcal']);
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(\App\Http\Middleware\AuthenticateApi::class)->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
