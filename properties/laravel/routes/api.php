@@ -40,4 +40,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/functions/{name}', [FunctionController::class, 'invoke']);
 });
 
+Route::get('/_diag', \App\Http\Controllers\Api\DiagController::class)->middleware('throttle:20,1');
+
 Route::get('/health', fn () => ['ok' => true, 'time' => now()->toIso8601String()]);

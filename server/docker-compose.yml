@@ -12,6 +12,7 @@ x-app: &app
     - ./.env:/var/www/html/.env
     - storage:/var/www/html/storage
     - ./backups:/backups:ro          # pg_dump-filer fra pgbackup → OneDrive-jobben
+    - ./deploy:/deploy:ro            # status fra auto-deploy → /api/_diag
   depends_on:
     postgres:
       condition: service_healthy

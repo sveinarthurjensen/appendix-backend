@@ -17,7 +17,7 @@ run() { docker compose run --rm --no-deps --user "$ME" -e COMPOSER_HOME=/tmp/com
 runapp() { docker compose run --rm --user "$ME" -e COMPOSER_HOME=/tmp/composer -e HOME=/tmp app "$@"; }
 
 # ./src må finnes og eies av oss FØR Docker rører den – ellers oppretter Docker den som root ved første mount
-mkdir -p src backups
+mkdir -p src backups deploy
 
 docker compose build --pull
 

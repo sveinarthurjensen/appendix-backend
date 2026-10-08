@@ -100,7 +100,7 @@ services:
 YML
   ufw allow "$PORT"/tcp >/dev/null || true
 fi
-mkdir -p "$TARGET/src" "$TARGET/backups"
+mkdir -p "$TARGET/src" "$TARGET/backups" "$TARGET/deploy"
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$TARGET"
 
 if [[ ! -f "$TARGET/src/artisan" ]]; then
