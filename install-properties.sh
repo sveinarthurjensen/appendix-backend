@@ -13,6 +13,7 @@ if [[ ! -f "$SRC/routes/api.php" ]]; then
 fi
 
 cp -r "$CODE/app/." "$SRC/app/"
+cp "$CODE/config-cors.php" "$SRC/config/cors.php"
 cp "$CODE/routes/api.php" "$SRC/routes/api.php"
 cp "$CODE/routes/console.php" "$SRC/routes/console.php"
 # Web-ruter (OIDC-utsteder + Entra/BankID-innlogging, sesjonsbasert) erstatter Laravel sin standard web.php.
