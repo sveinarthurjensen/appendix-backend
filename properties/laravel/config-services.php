@@ -31,16 +31,23 @@ return [
     // Base44-utstederen godtok alle klienter; her må klient-appene registreres. Standardklienten er
     // Base44-plattformens SSO for Appendix Properties (OIDC_CLIENT_ID/OIDC_CLIENT_SECRET/OIDC_REDIRECT_URIS, kommaseparert).
     'oidc' => [
-        'issuer' => env('OIDC_ISSUER', 'https://aprop.no'),
-        'clients' => [
-            env('OIDC_CLIENT_ID', 'aprop-base44-sso') => [
-                'name' => env('OIDC_CLIENT_NAME', 'Appendix Properties'),
-                'secret' => env('OIDC_CLIENT_SECRET'),
-                'redirect_uris' => env('OIDC_REDIRECT_URIS', 'https://aprop.no/auth/callback,https://app.aprop.no/auth/callback'),
-                'require_pkce' => false,
-            ],
-            // Flere klienter (andre apper i Appendix-familien) legges inn her: 'klient-id' => ['name' => …, 'secret' => …, 'redirect_uris' => […]]
-        ],
+        // Beslutning 8.10.2026: ÉN utsteder for hele konsernet. Hver Base44-app pekes om via sine
+        // sso_discovery_url / sso_client_id / sso_client_secret-secrets til denne. Når appene flyttes
+        // til egen frontend, byttes redirect_uri til deres egen /auth/callback.
+        'issuer' => env('OIDC_ISSUER', 'https://api.appendixholding.no'),
+        'clients' => array_merge([
+            // Base44 plattform-SSO: callback er alltid https://app.base44.com/api/apps/{appId}/auth/sso/callback
+            'appendix-properties' => ['name' => 'Appendix Properties', 'secret' => env('OIDC_SECRET_PROPERTIES'),
+                'redirect_uris' => 'https://app.base44.com/api/apps/692a283741b5c0d24fceeeb9/auth/sso/callback,https://aprop.no/auth/callback', 'require_pkce' => false],
+            'appendix-holding' => ['name' => 'Appendix Holding', 'secret' => env('OIDC_SECRET_HOLDING'),
+                'redirect_uris' => 'https://app.base44.com/api/apps/692a2988474b6d9f2ec1b7e6/auth/sso/callback', 'require_pkce' => false],
+            'klinikkportal' => ['name' => 'Klinikkportal', 'secret' => env('OIDC_SECRET_KLINIKKPORTAL'),
+                'redirect_uris' => 'https://app.base44.com/api/apps/691ccf20766152f6de656015/auth/sso/callback', 'require_pkce' => false],
+            'kommuneoverlegene' => ['name' => 'Kommuneoverlegene', 'secret' => env('OIDC_SECRET_KOMMUNEOVERLEGENE'),
+                'redirect_uris' => 'https://app.base44.com/api/apps/6924f8a869bc09d48d987563/auth/sso/callback', 'require_pkce' => false],
+            'foreningsdomstolen' => ['name' => 'Foreningsdomstolen', 'secret' => env('OIDC_SECRET_FORENINGSDOMSTOLEN'),
+                'redirect_uris' => 'https://app.base44.com/api/apps/6928e52262a4f288d7a6ffcc/auth/sso/callback', 'require_pkce' => false],
+        ], (array) json_decode(env('OIDC_EXTRA_CLIENTS', '{}'), true)),
     ],
     // Entra ID-innlogging for faste ansatte – EGEN app-registrering (ikke graph/e-post). redirect_uri må registreres i Entra som
     // «Web»-plattform og peke på {issuer}/auth/entra/callback. Tenant kan være GUID eller verifisert domene.
