@@ -75,6 +75,11 @@ if [[ ! -f "$TARGET/.env" ]]; then
 else
   echo ".env finnes – beholdes"
 fi
+# APP_KEY må være en ekte nøkkel (tidligere .env.example hadde en inline-kommentar som ble lest som verdi)
+if ! grep -q '^APP_KEY=base64:' "$TARGET/.env"; then
+  sed -i "s|^APP_KEY=.*|APP_KEY=base64:$(head -c 32 /dev/urandom | base64)|" "$TARGET/.env"
+  echo "Satte ny APP_KEY"
+fi
 if ! grep -q '^BACKUP_ENCRYPTION_KEY=.\+' "$TARGET/.env"; then
   echo "BACKUP_ENCRYPTION_KEY=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 48)" >> "$TARGET/.env"
   echo "Genererte BACKUP_ENCRYPTION_KEY – TA KOPI av denne fra .env og legg i passordhvelvet; uten den kan ikke OneDrive-backup gjenopprettes"

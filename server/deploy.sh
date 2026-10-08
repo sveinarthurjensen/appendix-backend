@@ -40,7 +40,7 @@ docker compose up -d postgres redis
 runapp composer install --no-dev --optimize-autoloader --no-interaction
 
 if $FIRST_RUN; then
-  grep -q '^APP_KEY=.\+' .env || runapp php artisan key:generate --force
+  grep -q '^APP_KEY=base64:' .env || runapp php artisan key:generate --force
   runapp php artisan horizon:install
   runapp php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider" --no-interaction
   runapp php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider" --tag="activitylog-migrations" --no-interaction
