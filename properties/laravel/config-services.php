@@ -74,4 +74,19 @@ return [
     ],
     // Brevhode-logo for exportDocumentForSigning (PDF). Standard = Base44-media-URL fra originalen; bytt til egen S3-URL.
     'letters' => ['logo_url' => env('LETTER_LOGO_URL', 'https://media.base44.com/images/public/692a283741b5c0d24fceeeb9/16d7b16e8_LogoAppendixProperties-horisontal-2026.png')],
+    // Diagnose (/api/_diag). Nøkkelstatus beregnes her (når config bygges/caches) – verdiene selv lagres aldri.
+    'diag' => [
+        'token' => env('DIAG_TOKEN'),
+        'key_status' => (function () {
+            $out = [];
+            foreach (['AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET', 'ENTRA_LOGIN_CLIENT_ID', 'ENTRA_LOGIN_CLIENT_SECRET',
+                'SVEVE_USERNAME', 'SVEVE_PASSWORD', 'ANTHROPIC_API_KEY', 'GOOGLE_MAPS_API_KEY', 'MAIL_USERNAME', 'MAIL_PASSWORD',
+                'SIGNICAT_CLIENT_ID', 'SIGNICAT_CLIENT_SECRET', 'ONEDRIVE_USER_EMAIL', 'BACKUP_ENCRYPTION_KEY',
+                'RECEIVE_LOCATIONS_TOKEN', 'ARBEIDSFLATE_NOKKEL', 'OIDC_ISSUER'] as $k) {
+                $v = (string) env($k, '');
+                $out[$k] = $v === '' ? 'mangler' : (preg_match('/\\[20[01]~|\\s/', $v) ? 'SATT, MEN UGYLDIG (mellomrom/innlimingskoder)' : 'satt (' . strlen($v) . ' tegn)');
+            }
+            return $out;
+        })(),
+    ],
 ];

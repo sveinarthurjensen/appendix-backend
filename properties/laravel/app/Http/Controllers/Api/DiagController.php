@@ -27,9 +27,8 @@ class DiagController extends Controller
 
     public function __invoke(Request $request): JsonResponse
     {
-        // env() virker ikke når config er cachet – les .env direkte (filen er montert i containeren)
-        $envFile = $this->readEnv();
-        $expected = (string) ($envFile['DIAG_TOKEN'] ?? '');
+        // .env er ikke lesbar for php-fpm (600, eies av deploy) – token og nøkkelstatus kommer fra cachet config
+        $expected = (string) config('services.diag.token', '');
         if ($expected === '') {
             return response()->json(['error' => 'DIAG_TOKEN ikke satt i .env (eller .env ikke synlig i containeren)'], 503);
         }
@@ -40,11 +39,7 @@ class DiagController extends Controller
         $deploy = @json_decode((string) @file_get_contents('/deploy/status.json'), true) ?: null;
         $deployLog = @file_get_contents('/deploy/last-deploy.log');
 
-        $keys = [];
-        foreach (self::SECRET_KEYS as $k) {
-            $v = (string) ($envFile[$k] ?? '');
-            $keys[$k] = $v === '' ? 'mangler' : (preg_match('/\[20[01]~|\s/', $v) ? 'SATT, MEN UGYLDIG (mellomrom/innlimingskoder)' : 'satt (' . strlen($v) . ' tegn)');
-        }
+        $keys = (array) config('services.diag.key_status', []);
 
         return response()->json([
             'deploy' => $deploy,
