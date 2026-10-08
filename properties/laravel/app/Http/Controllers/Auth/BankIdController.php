@@ -290,11 +290,23 @@ class BankIdController extends Controller
         return [
             'client_id' => (string) ($c['client_id'] ?? ''),
             'client_secret' => (string) ($c['client_secret'] ?? ''),
-            'discovery_url' => (string) ($c['discovery_url'] ?? ''),
+            'discovery_url' => self::normalizeDiscovery((string) ($c['discovery_url'] ?? '')),
             'scope' => (string) (($c['scope'] ?? '') ?: 'openid profile nin'),
             'acr_values' => (string) (($c['acr_values'] ?? '') ?: 'idp:nbid'),
             'redirect_uri' => (string) (($c['redirect_uri'] ?? '') ?: route('auth.bankid.callback')),
         ];
+    }
+
+    /** Godta både issuer-URL og (avkuttet) .well-known-URL – bygg alltid full discovery-adresse. */
+    private static function normalizeDiscovery(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+        $pos = stripos($url, '/.well-known');
+        $base = rtrim($pos === false ? $url : substr($url, 0, $pos), '/');
+        return $base . '/.well-known/openid-configuration';
     }
 
     private function discovery(array $cfg): array
