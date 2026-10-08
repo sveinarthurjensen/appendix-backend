@@ -17,6 +17,9 @@ if [[ $# -eq 0 ]]; then
   echo; echo "Sett: bash $0 NØKKEL [NØKKEL …]"; exit 0
 fi
 
+if [[ ! -t 0 ]]; then
+  echo "Ingen terminal. Kjør med: ssh -t root@<server> \"bash $0 $*\""; exit 1
+fi
 for k in "$@"; do
   read -r -s -p "$k: " v; echo
   [[ -n "$v" ]] || { echo "  (tom – hoppet over)"; continue; }
