@@ -38,6 +38,34 @@ export const apiToken = {
   clear: () => { try { localStorage.removeItem(TOK); } catch { /* */ } },
 };
 
+const STEP = 'appendix_step_up_at';
+const stepUpAllowed = () => { try { return Date.now() - Number(sessionStorage.getItem(STEP) || 0) > 60 * 1000; } catch { return false; } };
+const markStepUp = () => { try { sessionStorage.setItem(STEP, String(Date.now())); } catch { /* */ } };
+
+// ---------- Engangskode (SMS/e-post) for eksterne brukere – begrenset nivå ----------
+// Krever at serveren har klienten i OTP_CLIENT_IDS. Gir token med nivå «otp» (ikke BankID).
+export const otpLogin = {
+  async request(channel, target) {
+    const res = await fetch(LARAVEL_URL + '/api/auth/otp/request', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ channel, target, client_id: CLIENT_ID }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(d.message || `${res.status}`), { status: res.status });
+    return d; // {message, expires_in?}
+  },
+  async verify(channel, target, code) {
+    const res = await fetch(LARAVEL_URL + '/api/auth/otp/verify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ channel, target, code, client_id: CLIENT_ID }),
+    });
+    const t = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(t.message || 'Ugyldig eller utløpt kode'), { status: res.status });
+    wr(localStorage, TOK, { access: t.access_token, refresh: t.refresh_token, exp: Date.now() + (t.expires_in || 3600) * 1000 });
+    return true;
+  },
+};
+
 async function tokenRequest(params) {
   const res = await fetch(LARAVEL_URL + '/oidc/token', {
     method: 'POST',
@@ -53,14 +81,14 @@ const TRIED = 'appendix_oidc_tried';
 const recentlyTried = () => { try { return Date.now() - Number(sessionStorage.getItem(TRIED) || 0) < 10 * 60 * 1000; } catch { return true; } };
 const markTried = () => { try { sessionStorage.setItem(TRIED, String(Date.now())); } catch { /* */ } };
 
-async function startLogin() {
+async function startLogin(extra = {}) {
   markTried();
   const verifier = rand(48), state = rand(16);
   const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
   wr(sessionStorage, PKCE, { verifier, state, back: location.pathname + location.search + location.hash });
   const u = new URL(LARAVEL_URL + '/oidc/authorize');
   Object.entries({ response_type: 'code', client_id: CLIENT_ID, redirect_uri: location.origin + '/', scope: 'openid profile email',
-    state, code_challenge: challenge, code_challenge_method: 'S256' }).forEach(([k, v]) => u.searchParams.set(k, v));
+    state, code_challenge: challenge, code_challenge_method: 'S256', ...extra }).forEach(([k, v]) => u.searchParams.set(k, v));
   location.assign(u.toString());
   return new Promise(() => {}); // siden forlates
 }
@@ -104,6 +132,13 @@ async function api(method, path, { body, query } = {}) {
   if (res.status === 401) { apiToken.clear(); try { localStorage.removeItem(TOK); } catch { /* */ } }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
+    // Step-up: backend krever sterkere/ferskere innlogging (BankID/MFA). Ny innlogging med prompt=login,
+    // deretter tilbake til samme side. Vokter mot løkke: bare ett forsøk per side/minutt.
+    if (res.status === 403 && err.error === 'step_up_required' && stepUpAllowed()) {
+      markStepUp();
+      window.dispatchEvent(new CustomEvent('appendix:step-up', { detail: { required: err.required, max_age_minutes: err.max_age_minutes } }));
+      return startLogin({ prompt: 'login' }); // forlater siden; handlingen kan gjentas etter retur
+    }
     throw Object.assign(new Error(err.message || `${res.status} ${res.statusText}`), { status: res.status, data: err });
   }
   return res.status === 204 ? null : res.json();
