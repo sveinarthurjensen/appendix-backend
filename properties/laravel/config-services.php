@@ -52,7 +52,7 @@ return [
                 'redirect_uris' => 'https://app.base44.com/api/apps/692a283741b5c0d24fceeeb9/auth/sso/callback,https://aprop.no/auth/callback', 'require_pkce' => false],
             // SPA (nettleser) for Appendix Properties: public client, PKCE påkrevd. Frontend henter eget API-token via koden på rot-URL-en.
             'appendix-properties-spa' => ['name' => 'Appendix Properties (web)', 'secret' => '',
-                'redirect_uris' => 'https://portal.aprop.no/,https://preview-sandbox--692a283741b5c0d24fceeeb9.base44.app/', 'require_pkce' => true],
+                'redirect_uris' => 'https://portal.aprop.no/', 'require_pkce' => true],
             'appendix-holding' => ['name' => 'Appendix Holding', 'secret' => env('OIDC_SECRET_HOLDING'),
                 'redirect_uris' => 'https://app.base44.com/api/apps/692a2988474b6d9f2ec1b7e6/auth/sso/callback', 'require_pkce' => false],
             'klinikkportal' => ['name' => 'Klinikkportal', 'secret' => env('OIDC_SECRET_KLINIKKPORTAL'),

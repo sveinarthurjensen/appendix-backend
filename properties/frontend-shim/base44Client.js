@@ -135,11 +135,13 @@ const entities = new Proxy({}, {
 });
 
 const functions = {
+  ...legacy.functions,
   invoke: (name, payload) =>
     useLaravel(LARAVEL_FUNCTIONS, name) ? api('POST', `/functions/${name}`, { body: payload || {} }) : legacy.functions.invoke(name, payload),
 };
 
 const auth = {
+  ...legacy.auth, // behold alle SDK-metoder (innlogging, updateMe, setToken …); under overstyres bare me/logout
   // Base44 eier fortsatt appens egen innlogging; Laravel-token brukes bare mot Laravel-entiteter.
   me: async () => {
     const u = await legacy.auth.me();
@@ -152,8 +154,11 @@ const auth = {
     apiToken.clear();
     return legacy.auth.logout?.(...args);
   },
-  isAuthenticated: () => legacy.auth.isAuthenticated?.(),
-  redirectToLogin: (...a) => legacy.auth.redirectToLogin?.(...a),
 };
 
-export const base44 = { ...legacy, entities, functions, auth, integrations: legacy.integrations };
+// Proxy i stedet for spread: SDK-klienten har getteren asServiceRole som kaster i nettleseren hvis den leses ({...legacy} krasjet siden).
+const overrides = { entities, functions, auth };
+export const base44 = new Proxy(legacy, {
+  get: (target, key, receiver) => (key in overrides ? overrides[key] : Reflect.get(target, key, receiver)),
+  has: (target, key) => key in overrides || key in target,
+});
