@@ -20,6 +20,8 @@ const toSet = (s) => new Set((s || '').split(',').map((x) => x.trim()).filter(Bo
 const LARAVEL_ENTITIES = toSet(import.meta.env.VITE_LARAVEL_ENTITIES);
 const LARAVEL_FUNCTIONS = toSet(import.meta.env.VITE_LARAVEL_FUNCTIONS);
 const useLaravel = (set, name) => LARAVEL_URL && (set.has('*') || set.has(name));
+// Entiteter går bare mot Laravel når en ansatt har Laravel-sesjon – anonyme besøkende (offentlig portal) leser fortsatt fra Base44.
+const hasSession = () => { try { return !!localStorage.getItem('appendix_oidc_tokens'); } catch { return false; } };
 
 // ---------- Innlogging mot Laravel: OIDC authorization code + PKCE (public client) ----------
 // Brukeren logger inn hos api.appendixholding.no (Entra/BankID). Har de allerede sesjon der, går det i ett hopp.
@@ -47,7 +49,12 @@ async function tokenRequest(params) {
   wr(localStorage, TOK, { access: t.access_token, refresh: t.refresh_token || rd(localStorage, TOK)?.refresh, exp: Date.now() + (t.expires_in || 3600) * 1000 });
 }
 
+const TRIED = 'appendix_oidc_tried';
+const recentlyTried = () => { try { return Date.now() - Number(sessionStorage.getItem(TRIED) || 0) < 10 * 60 * 1000; } catch { return true; } };
+const markTried = () => { try { sessionStorage.setItem(TRIED, String(Date.now())); } catch { /* */ } };
+
 async function startLogin() {
+  markTried();
   const verifier = rand(48), state = rand(16);
   const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
   wr(sessionStorage, PKCE, { verifier, state, back: location.pathname + location.search + location.hash });
@@ -64,7 +71,11 @@ let callbackDone = Promise.resolve();
   if (!LARAVEL_URL || typeof window === 'undefined') return;
   const q = new URLSearchParams(location.search);
   const code = q.get('code'), state = q.get('state'), p = rd(sessionStorage, PKCE);
-  if (!code || !p || p.state !== state) return;
+  if (!p || p.state !== state) return;
+  if (!code) { // access_denied o.l. – bli værende på Base44
+    if (q.get('error')) { markTried(); try { sessionStorage.removeItem(PKCE); } catch { /* */ } history.replaceState({}, '', p.back || '/'); }
+    return;
+  }
   callbackDone = tokenRequest({ grant_type: 'authorization_code', code, redirect_uri: location.origin + '/', code_verifier: p.verifier })
     .then(() => { try { sessionStorage.removeItem(PKCE); } catch { /* */ } history.replaceState({}, '', p.back || '/'); })
     .catch(() => { apiToken.clear(); });
@@ -120,7 +131,7 @@ function laravelEntity(name) {
 }
 
 const entities = new Proxy({}, {
-  get: (_, name) => (useLaravel(LARAVEL_ENTITIES, name) ? laravelEntity(name) : legacy.entities[name]),
+  get: (_, name) => (useLaravel(LARAVEL_ENTITIES, name) && hasSession() ? laravelEntity(name) : legacy.entities[name]),
 });
 
 const functions = {
@@ -130,7 +141,11 @@ const functions = {
 
 const auth = {
   // Base44 eier fortsatt appens egen innlogging; Laravel-token brukes bare mot Laravel-entiteter.
-  me: () => legacy.auth.me(),
+  me: async () => {
+    const u = await legacy.auth.me();
+    if (u && LARAVEL_URL && LARAVEL_ENTITIES.size && !hasSession() && !recentlyTried()) startLogin(); // ett hopp via felles SSO-sesjon
+    return u;
+  },
   logout: async (...args) => {
     const t = apiToken.get();
     if (t) { await fetch(LARAVEL_URL + '/api/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${t}`, Accept: 'application/json' } }).catch(() => {}); }

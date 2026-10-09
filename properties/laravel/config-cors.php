@@ -4,7 +4,7 @@
 return [
     'paths' => ['api/*', 'oidc/token', 'oidc/userinfo', '.well-known/*'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => array_filter(array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', 'https://portal.aprop.no')))),
+    'allowed_origins' => array_filter(array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', 'https://portal.aprop.no,https://preview-sandbox--692a283741b5c0d24fceeeb9.base44.app')))),
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
