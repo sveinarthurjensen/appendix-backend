@@ -80,6 +80,11 @@ class EntityController extends Controller
 
         $created = DB::transaction(function () use ($class, $items) {
             return array_map(function (array $attrs) use ($class) {
+                $id = $attrs['id'] ?? null;
+                $attrs = $this->withoutSystemFields($attrs);
+                if ($id) {
+                    $attrs['id'] = $id;
+                }
                 $this->validateAttributes($class, $attrs, creating: true);
                 /** @var Model $m */
                 $m = new $class();
@@ -101,7 +106,7 @@ class EntityController extends Controller
         $model = $class::query()->findOrFail($id);
         Gate::forUser($request->user())->authorize('update', $model);
 
-        $attrs = $request->json()->all();
+        $attrs = $this->withoutSystemFields($request->json()->all());
         $this->validateAttributes($class, $attrs, creating: false);
         $model->fill($attrs)->save();
         return response()->json($model->fresh()->toBase44Array());
@@ -114,6 +119,14 @@ class EntityController extends Controller
         Gate::forUser($request->user())->authorize('delete', $model);
         $model->delete(); // soft delete – «versjoner, ikke slett»
         return response()->json(['success' => true, 'id' => $id]);
+    }
+
+    /** Base44-appene sender hele posten tilbake ved lagring, inkl. systemfelt som serveren selv eier. Disse ignoreres stille. */
+    private const SYSTEM_FIELDS = ['id', 'app_id', 'created_by', 'created_by_id', 'created_date', 'updated_date', 'is_sample', 'created_at', 'updated_at', 'deleted_at', '_id'];
+
+    private function withoutSystemFields(array $attrs): array
+    {
+        return array_diff_key($attrs, array_flip(self::SYSTEM_FIELDS));
     }
 
     /** Valideringsregler utledet av skjemaet: påkrevde felt + enum-verdier + bare kjente felt */
