@@ -202,6 +202,36 @@ class Provider
         return $this->redirectWithParams($flow->redirect_uri, ['code' => $flow->auth_code, 'state' => $flow->state]);
     }
 
+    /**
+     * Direkte utstedelse uten authorize-redirect (brukes av engangskode-innlogging).
+     * Oppretter en fullført flyt med gitt acr/amr og returnerer token-svar (id_token, access_token, refresh_token).
+     */
+    public function issueDirect(User $user, string $clientId, string $source, string $acr, array $amr, ?string $ip = null): array
+    {
+        $flow = OidcAuthFlow::create([
+            'flow_id' => Jwt::rand(16),
+            'auth_code' => null,
+            'client_id' => $clientId,
+            'scope' => 'openid profile email',
+            'response_type' => 'code',
+            'status' => 'completed',
+            'source' => $source,
+            'user_id' => $user->id,
+            'email' => $user->email ?? '',
+            'name' => $user->full_name ?? '',
+            'nin_hash' => $user->nin_hash ?? '',
+            'acr' => $acr,
+            'amr' => $amr,
+            'created_at' => now(),
+            'completed_at' => now(),
+            'used_at' => now(),
+            'expires_at' => now()->addSeconds(self::AUTH_CODE_TTL),
+            'ip' => $ip,
+        ]);
+        $this->audit('oidc_authorize', ['actor_user_id' => $user->id, 'actor_email' => $user->email, 'detail' => "direct via $source", 'ip' => $ip]);
+        return $this->issueTokens($flow, $user, true, 'oidc_token');
+    }
+
     /** Marker flyten som feilet og lag redirect til klienten med error (OAuth2-standard). */
     public function fail(OidcAuthFlow $flow, string $error, string $description = ''): string
     {

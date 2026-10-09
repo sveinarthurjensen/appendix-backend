@@ -24,6 +24,13 @@ class FunctionController extends Controller
             return response()->json(['error' => "Funksjonen $name er ikke flyttet til Laravel ennå"], 501);
         }
 
+        // Step-up (backend-håndhevet): sentral tabell i StepUpPolicy
+        if ($policy = \App\Support\StepUpPolicy::for($name)) {
+            if (!\App\Http\Middleware\RequireAuthLevel::satisfied($request->attributes->get('oidc_flow'), $policy[0], $policy[1])) {
+                return response()->json(['error' => 'step_up_required', 'message' => 'Ekstra bekreftelse kreves for denne handlingen.',
+                    'required' => $policy[0], 'max_age_minutes' => $policy[1]], 403);
+            }
+        }
         try {
             $result = app($class)($request->user(), $request->json()->all());
             return response()->json($result);

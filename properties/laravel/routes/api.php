@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
+// Engangskode (SMS/e-post) – begrenset nivå; strengt rate-limitert (i tillegg til grenser i OtpLogin)
+Route::post('/auth/otp/request', [\App\Http\Controllers\Api\OtpController::class, 'request'])->middleware('throttle:10,1');
+Route::post('/auth/otp/verify', [\App\Http\Controllers\Api\OtpController::class, 'verify'])->middleware('throttle:20,1');
+
 // ---------- Offentlige funksjoner (ingen innlogging) ----------
 // Må registreres FØR den generelle POST /functions/{name} i auth-gruppen, ellers fanger den opp kallene.
 // Samme stier som nettsidene/andre apper bruker i dag (…/functions/<navn>), så bare vertsnavnet endres.
