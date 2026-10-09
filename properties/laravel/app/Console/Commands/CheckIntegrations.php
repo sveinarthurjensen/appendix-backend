@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Http;
 /** php artisan app:check-integrations – tester at nøklene i .env faktisk virker, uten å vise dem. */
 class CheckIntegrations extends Command
 {
-    protected $signature = 'app:check-integrations {--mailbox=post@aprop.no}';
+    protected $signature = 'app:check-integrations {--mailbox=post@aprop.no} {--sms= : Send en test-SMS til dette nummeret (koster én SMS)}';
     protected $description = 'Sjekk Graph, Sveve, Anthropic, Google Maps, SMTP-konfig';
 
     public function handle(): int
@@ -31,6 +31,10 @@ class CheckIntegrations extends Command
             return ($r->json('status') ?? '?') === 'OK' ? 'OK' : 'Status: ' . $r->json('status') . ' – ' . substr((string) $r->json('error_message'), 0, 140);
         }) : 'mangler nøkkel'];
         $rows[] = ['SMTP', config('mail.mailers.smtp.username') ? 'konfigurert (' . config('mail.mailers.smtp.host') . ')' : 'mangler MAIL_USERNAME/PASSWORD'];
+        if ($to = $this->option('sms')) {
+            $r = app(\App\Services\SveveSms::class)->send($to, 'Test fra Appendix-backend ' . now()->format('H:i'));
+            $rows[] = ['Sveve test-SMS til ' . $to, $r['ok'] ? 'SENDT (' . ($r['msgOkCount'] ?? '?') . ')' : 'FEIL: ' . ($r['error'] ?? '?') . ' ' . substr(json_encode($r['raw'] ?? null), 0, 160)];
+        }
         $this->table(['Tjeneste', 'Resultat'], $rows);
         return self::SUCCESS;
     }
