@@ -23,12 +23,12 @@ class CheckIntegrations extends Command
             $r = Http::asForm()->timeout(15)->post('https://sveve.no/SMS/AccountAdm', [
                 'cmd' => 'sms_count', 'user' => config('services.sveve.username'), 'passwd' => config('services.sveve.password'),
             ]);
-            return is_numeric(trim($r->body())) ? 'OK – ' . trim($r->body()) . ' SMS igjen' : 'Svar: ' . substr($r->body(), 0, 80);
+            return is_numeric(trim($r->body())) ? 'OK – ' . trim($r->body()) . ' SMS igjen' : 'HTTP ' . $r->status() . ', svar: «' . substr(trim($r->body()), 0, 80) . '» (brukernavn ' . strlen((string) config('services.sveve.username')) . ' tegn, passord ' . strlen((string) config('services.sveve.password')) . ' tegn)';
         }) : 'mangler nøkkel'];
         $rows[] = ['Anthropic', config('services.anthropic.key') ? $this->try(fn () => 'OK – ' . trim(app(\App\Services\Llm::class)->text('Svar med ordet OK', 5))) : 'mangler nøkkel'];
         $rows[] = ['Google Maps', config('services.google_maps.key') ? $this->try(function () {
             $r = Http::timeout(15)->get('https://maps.googleapis.com/maps/api/streetview/metadata', ['location' => 'Oslo', 'key' => config('services.google_maps.key')]);
-            return ($r->json('status') ?? '?') === 'OK' ? 'OK' : 'Status: ' . $r->json('status');
+            return ($r->json('status') ?? '?') === 'OK' ? 'OK' : 'Status: ' . $r->json('status') . ' – ' . substr((string) $r->json('error_message'), 0, 140);
         }) : 'mangler nøkkel'];
         $rows[] = ['SMTP', config('mail.mailers.smtp.username') ? 'konfigurert (' . config('mail.mailers.smtp.host') . ')' : 'mangler MAIL_USERNAME/PASSWORD'];
         $this->table(['Tjeneste', 'Resultat'], $rows);
