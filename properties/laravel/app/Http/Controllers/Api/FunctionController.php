@@ -64,6 +64,21 @@ class FunctionController extends Controller
         return app(\App\Functions\AdminStatus::class)->response($request);
     }
 
+    /** Offentlige invitasjonsfunksjoner (kun tillatt liste) – ingen innlogging, kjøres uten bruker */
+    public function publicFunction(Request $request, string $name): JsonResponse
+    {
+        abort_unless(in_array($name, ['resolveInviteCode', 'validateInviteToken'], true), 404);
+        if ($request->isMethod('OPTIONS')) {
+            return response()->json(null, 204);
+        }
+        $class = 'App\\Functions\\' . Str::studly($name);
+        try {
+            return response()->json(app($class)(null, $request->json()->all()));
+        } catch (FunctionException $e) {
+            return response()->json(['error' => $e->getMessage()] + $e->extra, $e->status);
+        }
+    }
+
     /** GET|POST /api/functions/getFeatureFlags – UI-flagg, ingen innlogging */
     public function getFeatureFlags(Request $request)
     {

@@ -19,6 +19,9 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::match(['GET', 'OPTIONS'], '/functions/offentligeUtleieobjekter', [FunctionController::class, 'offentligeUtleieobjekter']);
     // Statusoversikt for Arbeidsflaten – header x-arbeidsflate-nokkel
     Route::get('/functions/adminStatus', [FunctionController::class, 'adminStatus']);
+    // Invitasjonsflyt (uinnlogget mottaker fra SMS-lenke): kode → token, og token-validering
+    Route::match(['POST', 'OPTIONS'], '/functions/resolveInviteCode', [FunctionController::class, 'publicFunction'])->defaults('name', 'resolveInviteCode');
+    Route::match(['POST', 'OPTIONS'], '/functions/validateInviteToken', [FunctionController::class, 'publicFunction'])->defaults('name', 'validateInviteToken');
     // UI-feature-flagg
     Route::match(['GET', 'POST'], '/functions/getFeatureFlags', [FunctionController::class, 'getFeatureFlags']);
     // Offentlig iCal-eksport (Airbnb/Booking henter denne uten innlogging)

@@ -42,6 +42,10 @@ Route::post('/functions/oidcToken', [ProviderController::class, 'token'])->middl
 Route::get('/functions/oidcUserinfo', [ProviderController::class, 'userinfo']);
 Route::get('/functions/oidcJwks', [ProviderController::class, 'jwks']);
 
+// Kort invitasjonslenke fra SMS (/i/<kode>) → portalens InviteRedirect-side
+Route::get('/i/{code}', fn (string $code) => redirect()->away(rtrim((string) env('PORTAL_URL', 'https://portal.aprop.no'), '/') . '/i/' . rawurlencode($code)))
+    ->where('code', '[A-Za-z0-9_-]{4,32}')->middleware('throttle:60,1');
+
 // Innlogging (tre veier inn): Entra (faste ansatte), BankID (konsulenter/parter – stub), WebAuthn/QR (kommer)
 Route::prefix('auth')->name('auth.')->group(function () {
     Route::get('/entra/redirect', [EntraController::class, 'redirect'])->name('entra.redirect');
